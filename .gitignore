@@ -1,0 +1,57 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local configuration
+local.properties
+.env
+.env.*
+keystore.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Kotlin
+.kotlin/
+
+# Android generated files
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Build artifacts
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.hprof
+
+# Signing keys
+*.jks
+*.keystore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs / temporary files
+*.log
+*.tmp
+*.swp
+*~
+
+# Local test / diagnostic artifacts
+diagnostics/
+recordings/
+*.wav
+
+# Keep project documentation tracked
+!AGENTS.md
+!CLAUDE.md
+!SIM_RELAY_M0_CODEX_INSTRUCTIONS.md
+!PHASE_0A_REVIEW.md
+!docs/
+!docs/**
