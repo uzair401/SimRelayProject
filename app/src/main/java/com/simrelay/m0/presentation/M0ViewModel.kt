@@ -31,14 +31,18 @@ import com.simrelay.m0.call.AudioModeSnapshot
 import com.simrelay.m0.call.CallState
 import com.simrelay.m0.call.CallStateMonitor
 import com.simrelay.m0.diagnostics.CapabilityProbe
+import com.simrelay.m0.diagnostics.CallSessionReadinessEvaluator
 import com.simrelay.m0.diagnostics.CaptureArtifactStore
 import com.simrelay.m0.diagnostics.CaptureArtifacts
 import com.simrelay.m0.diagnostics.CaptureAttemptKind
 import com.simrelay.m0.diagnostics.DeviceSnapshot
 import com.simrelay.m0.diagnostics.DiagnosticEvent
+import com.simrelay.m0.diagnostics.DiagnosticLogcat
 import com.simrelay.m0.diagnostics.DiagnosticExporter
 import com.simrelay.m0.diagnostics.DiagnosticReport
 import com.simrelay.m0.diagnostics.PermissionSnapshot
+import com.simrelay.m0.diagnostics.DeviceQualificationProfileFactory
+import com.simrelay.m0.diagnostics.SensitiveDiagnosticRedactor
 import com.simrelay.m0.pcm.PcmMetricSummary
 import com.simrelay.m0.pcm.PcmToneGenerator
 import com.simrelay.m0.pcm.StreamingPcmMetrics
@@ -83,12 +87,13 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
     private var captureRequested = false
     @Volatile
     private var injectionRequested = false
+    private var lastObservedAudioMode = audioManager.mode
 
     init {
         startCallMonitorSafely()
         background.execute(AudioOperation.ArtifactWrite) {
             artifactStore.recoverIncomplete(exporter.rootDirectory).forEach { recovered ->
-                recordEvent("capture_artifact_recovered", recovered.absolutePath)
+                recordEvent("artifact_recovered", "path=${recovered.absolutePath}")
             }
         }
     }
@@ -120,12 +125,31 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
             if (lifecycleState !in setOf(SessionState.Idle, SessionState.Ready, SessionState.Error)) return
             transitionLocked(SessionState.Probing)
         }
+        recordAudioModeIfChanged()
         recordEvent("probe_started", "callState=$callState audioMode=${audioManager.mode}")
         background.execute(AudioOperation.CapabilityProbe) {
             var selectedBackend: CallAudioBackend? = null
             var adopted = false
             try {
-                val (baseReport, selection) = CapabilityProbe(getApplication()).run(callState)
+                val (initialReport, initialSelection) = CapabilityProbe(getApplication()).run(callState)
+                val observedCallState = callState
+                val currentReadiness = CallSessionReadinessEvaluator.evaluate(
+                    initialSelection.capability,
+                    initialSelection.backend.readiness(initialSelection.capability),
+                    observedCallState
+                )
+                val selection = initialSelection.copy(readiness = currentReadiness)
+                val baseReport = initialReport.copy(
+                    readiness = currentReadiness,
+                    callState = observedCallState,
+                    qualification = DeviceQualificationProfileFactory.create(
+                        initialReport.device,
+                        initialReport.permissions,
+                        initialSelection.capability,
+                        currentReadiness,
+                        initialSelection.backend.id
+                    )
+                )
                 selectedBackend = selection.backend
                 val mergedReport = synchronized(lock) {
                     baseReport.copy(events = pendingEvents.toList() + baseReport.events).also {
@@ -133,8 +157,8 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
                 val directory = exporter.export(mergedReport)
-                val previousBackend = synchronized(lock) {
-                    val previous = backend
+                val previousSelection = synchronized(lock) {
+                    val previous = Triple(backend, backendCapability, backendReadiness)
                     backend = selection.backend
                     backendCapability = selection.capability
                     backendReadiness = selection.readiness
@@ -145,18 +169,50 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
                     previous
                 }
                 adopted = true
-                previousBackend?.close()
+                previousSelection.first?.close()
+                val framework = selection.reports.firstOrNull {
+                    it.backendId == AudioBackendId.FrameworkInterception
+                }
+                recordEvent("backend_selected", "backend=${selection.backend.id.value}")
+                framework?.let { report ->
+                    recordEvent(
+                        "framework_api_state",
+                        "interceptability=${report.apiPresence.interceptability.access} " +
+                            "downlink=${report.apiPresence.downlinkExtraction.access} " +
+                            "uplink=${report.apiPresence.uplinkInjection.access}"
+                    )
+                    recordEvent(
+                        "pstn_interceptable",
+                        "value=${report.pstnInterceptable?.toString() ?: "Unknown"}"
+                    )
+                }
+                if (previousSelection.second?.state != framework?.state && framework != null) {
+                    recordEvent(
+                        "capability_changed",
+                        "backend=${framework.backendId.value} state=${framework.state}"
+                    )
+                }
+                if (previousSelection.third?.state != selection.readiness.state) {
+                    recordEvent(
+                        "readiness_changed",
+                        "state=${selection.readiness.state} callState=$callState audioMode=${selection.readiness.audioMode}"
+                    )
+                }
+                mergedReport.permissions.grants.forEach { permission ->
+                    recordEvent(
+                        "permission_state",
+                        "name=${permission.name} declared=${permission.declared} granted=${permission.granted} protection=${permission.protection}"
+                    )
+                }
                 recordEvent(
                     "probe_completed",
                     "backend=${selection.backend.id.value} capability=${selection.capability.state} readiness=${selection.readiness.state}"
                 )
                 persistReport()
-                val framework = selection.reports.firstOrNull {
-                    it.backendId == AudioBackendId.FrameworkInterception
-                }
                 postState { state ->
                     state.copy(
                         selectedBackend = selection.backend.id,
+                        capabilityState = framework?.state?.name ?: selection.capability.state.name,
                         callAudioInterceptionGranted = mergedReport.permissions.isGranted(
                             PermissionSnapshot.CallAudioInterception
                         ),
@@ -181,13 +237,15 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
             captureRequested = true
             transitionLocked(SessionState.Capturing)
         }
+        recordAudioModeIfChanged()
         recordEvent("capture_start_requested", "audioMode=${audioManager.mode}")
         postState { it.copy(captureState = "Starting", lastError = null) }
         background.execute(AudioOperation.OpenDownlink) {
             val artifacts = createArtifacts(CaptureAttemptKind.Downlink) ?: return@execute
+            recordEvent("session_open_started", "direction=downlink attempt=${artifacts.attemptId}")
             when (val opened = openDownlink()) {
                 is BackendResult.Success -> startCapture(opened.value, artifacts)
-                is BackendResult.Failure -> if (captureRequested) fail(opened.capability)
+                is BackendResult.Failure -> if (captureRequested) handleSessionOpenFailure("downlink", opened.capability)
             }
         }
     }
@@ -199,7 +257,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
             captureRequested = false
             session = downlinkSession
         }
-        recordEvent("capture_stop_requested", "user")
+        recordEvent("stop_requested", "direction=downlink")
         background.execute(AudioOperation.StopDownlink) {
             closeDownlink(session)
             synchronized(lock) {
@@ -216,12 +274,14 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
             injectionRequested = true
             transitionLocked(SessionState.Injecting)
         }
+        recordAudioModeIfChanged()
         recordEvent("injection_start_requested", "audioMode=${audioManager.mode}")
         postState { it.copy(injectionState = "Starting", lastError = null) }
         background.execute(AudioOperation.OpenUplink) {
+            recordEvent("session_open_started", "direction=uplink")
             when (val opened = openUplink()) {
                 is BackendResult.Success -> startInjectionLoop(opened.value)
-                is BackendResult.Failure -> if (injectionRequested) fail(opened.capability)
+                is BackendResult.Failure -> if (injectionRequested) handleSessionOpenFailure("uplink", opened.capability)
             }
         }
     }
@@ -233,7 +293,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
             injectionRequested = false
             session = uplinkSession
         }
-        recordEvent("injection_stop_requested", "user")
+        recordEvent("stop_requested", "direction=uplink")
         background.execute(AudioOperation.StopUplink) {
             closeUplink(session)
             synchronized(lock) {
@@ -251,22 +311,25 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
             injectionRequested = true
             transitionLocked(SessionState.FullDuplex)
         }
+        recordAudioModeIfChanged()
         recordEvent("full_duplex_start_requested", "audioMode=${audioManager.mode}")
         postState {
             it.copy(captureState = "Starting", injectionState = "Starting", lastError = null)
         }
         background.execute(AudioOperation.OpenDownlink) {
             val artifacts = createArtifacts(CaptureAttemptKind.FullDuplex) ?: return@execute
+            recordEvent("session_open_started", "direction=downlink mode=full_duplex attempt=${artifacts.attemptId}")
             val downlink = openDownlink()
             if (downlink is BackendResult.Failure) {
-                if (captureRequested) fail(downlink.capability)
+                if (captureRequested) handleSessionOpenFailure("downlink", downlink.capability)
                 return@execute
             }
             val downlinkValue = (downlink as BackendResult.Success).value
+            recordEvent("session_open_started", "direction=uplink mode=full_duplex attempt=${artifacts.attemptId}")
             val uplink = openUplink()
             if (uplink is BackendResult.Failure) {
                 closeDownlink(downlinkValue)
-                if (injectionRequested) fail(uplink.capability)
+                if (injectionRequested) handleSessionOpenFailure("uplink", uplink.capability)
                 return@execute
             }
             val uplinkValue = (uplink as BackendResult.Success).value
@@ -291,15 +354,16 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
                     fail(captureStart.capability)
                     return@execute
                 }
-                is BackendResult.Success -> recordEvent("downlink_started", "attempt=${artifacts.attemptId}")
+                is BackendResult.Success -> recordEvent("capture_started", "attempt=${artifacts.attemptId}")
             }
             when (val injectionStart = uplinkValue.start()) {
                 is BackendResult.Failure -> {
                     fail(injectionStart.capability)
                     return@execute
                 }
-                is BackendResult.Success -> recordEvent("uplink_started", "attempt=${artifacts.attemptId}")
+                is BackendResult.Success -> recordEvent("injection_started", "attempt=${artifacts.attemptId}")
             }
+            recordEvent("full_duplex_started", "attempt=${artifacts.attemptId}")
             postState {
                 it.copy(
                     captureState = "Running at ${downlinkValue.config.sampleRateHz} Hz",
@@ -323,7 +387,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
             uplink = uplinkSession
             transitionLocked(SessionState.Stopping)
         }
-        recordEvent("stop_all_requested", "user")
+        recordEvent("stop_requested", "direction=all")
         background.execute(AudioOperation.StopDownlink) {
             closeDownlink(downlink)
             closeUplink(uplink)
@@ -380,7 +444,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
         when (val start = session.start()) {
             is BackendResult.Failure -> fail(start.capability)
             is BackendResult.Success -> {
-                recordEvent("downlink_started", "attempt=${artifacts.attemptId}")
+                recordEvent("capture_started", "attempt=${artifacts.attemptId}")
                 postState {
                     it.copy(
                         captureState = "Running at ${session.config.sampleRateHz} Hz",
@@ -407,7 +471,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
         when (val start = session.start()) {
             is BackendResult.Failure -> fail(start.capability)
             is BackendResult.Success -> {
-                recordEvent("uplink_started", "injection-only")
+                recordEvent("injection_started", "attempt=injection-only")
                 postState { it.copy(injectionState = "Running at ${session.config.sampleRateHz} Hz") }
                 background.execute(AudioOperation.WriteUplink) {
                     injectionLoop(session, "injection-only")
@@ -433,7 +497,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
                             val now = SystemClock.elapsedRealtime()
                             if (!firstSampleRecorded) {
                                 firstSampleRecorded = true
-                                recordEvent("first_rx_sample", "attempt=${artifacts.attemptId}")
+                                recordEvent("first_rx", "attempt=${artifacts.attemptId}")
                             }
                             if (now - lastCheckpoint >= 1_000L) {
                                 lastCheckpoint = now
@@ -497,7 +561,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
                         }
                         if (!firstWriteRecorded && result.value > 0) {
                             firstWriteRecorded = true
-                            recordEvent("first_tx_write", "attempt=$attemptId samples=${result.value}")
+                            recordEvent("first_tx", "attempt=$attemptId samples=${result.value}")
                         }
                     }
                     is BackendResult.Failure -> {
@@ -565,7 +629,10 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
         }
         return try {
             artifactStore.create(directory, kind).also { artifacts ->
-                recordEvent("capture_attempt_created", "${artifacts.attemptId} ${artifacts.partialWav.absolutePath}")
+                recordEvent(
+                    "artifact_created",
+                    "attempt=${artifacts.attemptId} path=${artifacts.partialWav.absolutePath}"
+                )
             }
         } catch (throwable: Throwable) {
             fail(
@@ -600,7 +667,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
         )
         closeDownlink(downlink)
         closeUplink(uplink)
-        persistReportSafely()
+        background.execute(AudioOperation.ExportDiagnostics, ::persistReport)
         postState {
             it.copy(
                 captureState = "Stopped",
@@ -614,7 +681,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
         if (session == null) return
         try {
             session.close()
-            recordEvent("downlink_released", "sampleRate=${session.config.sampleRateHz}")
+            recordEvent("session_released", "direction=downlink sampleRate=${session.config.sampleRateHz}")
         } catch (throwable: Throwable) {
             reportCleanupFailure(AudioOperation.StopDownlink, throwable)
         } finally {
@@ -628,7 +695,7 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
         if (session == null) return
         try {
             session.close()
-            recordEvent("uplink_released", "sampleRate=${session.config.sampleRateHz}")
+            recordEvent("session_released", "direction=uplink sampleRate=${session.config.sampleRateHz}")
         } catch (throwable: Throwable) {
             reportCleanupFailure(AudioOperation.StopUplink, throwable)
         } finally {
@@ -662,21 +729,77 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
     private fun onCallStateChanged(state: CallState) {
         val previous = callState
         callState = state
-        recordEvent("call_state_transition", "$previous->$state audioMode=${audioManager.mode}")
+        recordEvent("call_state_changed", "from=$previous to=$state")
+        recordAudioModeIfChanged()
+        refreshSessionReadiness(state)
         postState { it.copy(callState = state, audioMode = AudioModeSnapshot.capture(audioManager).name) }
     }
 
     private fun recordEvent(name: String, detail: String) {
+        val safeDetail = SensitiveDiagnosticRedactor.redact(detail)
         val event = DiagnosticEvent(
             elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos(),
             name = name,
-            detail = CapabilityFailureMapper.sanitize(detail).orEmpty()
+            detail = CapabilityFailureMapper.sanitize(safeDetail).orEmpty()
         )
         synchronized(lock) {
             val current = report
             if (current == null) pendingEvents += event
             else report = current.copy(events = current.events + event)
         }
+        DiagnosticLogcat.emit(event)
+    }
+
+    private fun recordAudioModeIfChanged() {
+        val currentMode = audioManager.mode
+        val previousMode = synchronized(lock) {
+            if (lastObservedAudioMode == currentMode) null else {
+                val previous = lastObservedAudioMode
+                lastObservedAudioMode = currentMode
+                previous
+            }
+        }
+        if (previousMode != null) {
+            recordEvent("audio_mode_changed", "from=$previousMode to=$currentMode")
+        }
+    }
+
+    private fun refreshSessionReadiness(state: CallState) {
+        val snapshot = synchronized(lock) { Triple(backend, backendCapability, backendReadiness) }
+        val selectedBackend = snapshot.first ?: return
+        val capability = snapshot.second ?: return
+        val baseReadiness = selectedBackend.readiness(capability)
+        val readiness = CallSessionReadinessEvaluator.evaluate(capability, baseReadiness, state)
+        val changed = synchronized(lock) {
+            if (backend !== selectedBackend || backendCapability !== capability) return@synchronized false
+            val previousState = backendReadiness?.state
+            backendReadiness = readiness
+            report = report?.let { current ->
+                current.copy(
+                    readiness = readiness,
+                    callState = state,
+                    qualification = DeviceQualificationProfileFactory.create(
+                        current.device,
+                        current.permissions,
+                        capability,
+                        readiness,
+                        selectedBackend.id
+                    )
+                )
+            }
+            previousState != readiness.state
+        }
+        if (changed) recordEvent("readiness_changed", "state=${readiness.state} callState=$state")
+        postState { it.copy(readiness = readiness.state.name) }
+        persistReportSafely()
+    }
+
+    private fun handleSessionOpenFailure(direction: String, capability: CallAudioCapability) {
+        recordEvent(
+            "session_open_failed",
+            "direction=$direction state=${capability.state} operation=${capability.operation}"
+        )
+        fail(capability)
     }
 
     private fun containBackgroundFailure(operation: AudioOperation, throwable: Throwable) {

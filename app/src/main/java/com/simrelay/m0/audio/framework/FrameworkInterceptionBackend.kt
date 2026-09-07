@@ -79,7 +79,7 @@ class FrameworkInterceptionBackend(
             when (val result = bridge.isPstnCallAudioInterceptable()) {
                 is BackendResult.Success -> CallAudioCapability(
                     id,
-                    if (result.value) CapabilityState.Supported else CapabilityState.DeviceNotInterceptable,
+                    if (result.value) CapabilityState.Supported else CapabilityState.PstnInterceptionUnsupported,
                     if (result.value) "Framework PSTN interception is available" else "PSTN audio devices are not interceptable",
                     apiPresence = presence,
                     pstnInterceptable = result.value
@@ -356,6 +356,6 @@ class FrameworkInterceptionBackend(
 
     companion object {
         const val CallAudioPermission = "android.permission.CALL_AUDIO_INTERCEPTION"
-        private const val LogTag = "SimRelayFramework"
+        private const val LogTag = "SimRelayM0"
     }
 }

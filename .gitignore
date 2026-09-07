@@ -44,8 +44,8 @@ Thumbs.db
 *~
 
 # Local test / diagnostic artifacts
-diagnostics/
-recordings/
+/diagnostics/
+/recordings/
 *.wav
 
 # Keep project documentation tracked

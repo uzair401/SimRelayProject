@@ -1,0 +1,28 @@
+package=com.simrelay.m0
+package:/data/app/~~AXjm2tbJzEDtMBZ4YYHdkg==/com.simrelay.m0-WuvwPAp6sm4unEwj6U-azw==/base.apk
+  Package [com.simrelay.m0] (b9f132d):
+    userId=10284
+    codePath=/data/app/~~AXjm2tbJzEDtMBZ4YYHdkg==/com.simrelay.m0-WuvwPAp6sm4unEwj6U-azw==
+    resourcePath=/data/app/~~AXjm2tbJzEDtMBZ4YYHdkg==/com.simrelay.m0-WuvwPAp6sm4unEwj6U-azw==
+    primaryCpuAbi=arm64-v8a
+    secondaryCpuAbi=null
+    versionCode=1 minSdk=24 targetSdk=36
+    versionName=1.0
+    usesNonSdkApi=false
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    requested permissions:
+      android.permission.RECORD_AUDIO
+      android.permission.READ_PHONE_STATE
+      android.permission.CALL_AUDIO_INTERCEPTION
+      android.permission.CAPTURE_AUDIO_OUTPUT
+      android.permission.MODIFY_PHONE_STATE
+    install permissions:
+      android.permission.CAPTURE_AUDIO_OUTPUT: granted=false
+      android.permission.CALL_AUDIO_INTERCEPTION: granted=false
+      android.permission.MODIFY_PHONE_STATE: granted=false
+    User 0: ceDataInode=1430619 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false
+      runtime permissions:
+        android.permission.READ_PHONE_STATE: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.RECORD_AUDIO: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+    User 0:

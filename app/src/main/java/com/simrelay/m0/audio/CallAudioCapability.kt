@@ -9,6 +9,7 @@ enum class CapabilityState {
     PrivilegeMissing,
     CallNotActive,
     AudioRouteUnavailable,
+    PstnInterceptionUnsupported,
     DeviceNotInterceptable,
     UnsupportedAudioFormat,
     ResourceBusy,
@@ -82,6 +83,7 @@ enum class AudioOperation {
 
 enum class SessionReadinessState {
     ReadyToAttempt,
+    SessionNotReady,
     PermissionMissing,
     BackendUnavailable,
     FrameworkValidationRequired,

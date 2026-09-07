@@ -1,0 +1,12 @@
+package=com.simrelay.m0
+android.permission.CALL_AUDIO_INTERCEPTION declared=true granted=false protection=privileged_or_signature_or_role state=DeclaredPrivilegedPermissionUnavailableToNormalApp
+android.permission.CAPTURE_AUDIO_OUTPUT declared=true granted=false protection=privileged_or_signature_or_role state=DeclaredPrivilegedPermissionUnavailableToNormalApp
+android.permission.MODIFY_PHONE_STATE declared=true granted=false protection=privileged_or_signature_or_role state=DeclaredPrivilegedPermissionUnavailableToNormalApp
+android.permission.RECORD_AUDIO declared=true granted=true protection=runtime state=DeclaredAndGranted
+android.permission.READ_PHONE_STATE declared=true granted=true protection=runtime state=DeclaredAndGranted
+requested_permissions:
+      android.permission.RECORD_AUDIO
+      android.permission.READ_PHONE_STATE
+      android.permission.CALL_AUDIO_INTERCEPTION
+      android.permission.CAPTURE_AUDIO_OUTPUT
+      android.permission.MODIFY_PHONE_STATE

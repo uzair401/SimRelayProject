@@ -10,6 +10,7 @@ data class M0UiState(
     val androidVersion: String,
     val buildFingerprint: String,
     val selectedBackend: AudioBackendId = AudioBackendId.Unsupported,
+    val capabilityState: String = "Unknown",
     val readiness: String = "Unknown",
     val callAudioInterceptionGranted: Boolean = false,
     val frameworkApiPresence: FrameworkApiPresence = FrameworkApiPresence.Unknown,

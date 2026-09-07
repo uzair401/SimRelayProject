@@ -1,0 +1,7 @@
+Audio mode: 
+  mic mute FromSwitch=false FromRestrictions=false FromApi=false from system=false
+  Preferred devices for strategy:
+  Connected devices:
+  Computed Preferred communication device: null
+  Applied Preferred communication device: null
+  Active communication device: AudioDeviceAttributes: role:output type:earpiece addr: name:SM-A225F profiles:[{ENCODING_PCM_16BIT, sampling rates=[48000], channel masks=0x04, encapsulation type=0}] descriptors:[]

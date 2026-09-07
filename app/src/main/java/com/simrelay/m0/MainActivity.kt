@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,14 +44,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             SimRelayM0Theme {
                 val viewModel: M0ViewModel = viewModel()
-                M0App(viewModel)
+                M0App(viewModel, intent.getBooleanExtra(RunProbeExtra, false))
             }
         }
     }
 }
 
 @Composable
-private fun M0App(viewModel: M0ViewModel) {
+private fun M0App(viewModel: M0ViewModel, runProbeOnLaunch: Boolean) {
     val state by viewModel.uiState
     val context = LocalContext.current
     var pendingAudioAction by remember { mutableStateOf<(() -> Unit)?>(null) }
@@ -87,6 +88,10 @@ private fun M0App(viewModel: M0ViewModel) {
         }
     }
 
+    LaunchedEffect(runProbeOnLaunch) {
+        if (runProbeOnLaunch) viewModel.runCapabilityProbe()
+    }
+
     Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
         DiagnosticScreen(
             state = state,
@@ -109,6 +114,8 @@ private fun M0App(viewModel: M0ViewModel) {
     }
 }
 
+private const val RunProbeExtra = "com.simrelay.m0.RUN_PROBE"
+
 @Composable
 private fun DiagnosticScreen(
     state: M0UiState,
@@ -127,6 +134,7 @@ private fun DiagnosticScreen(
         "Android" to state.androidVersion,
         "Fingerprint" to state.buildFingerprint,
         "Selected backend" to state.selectedBackend.value,
+        "Framework capability" to state.capabilityState,
         "Session readiness" to state.readiness,
         "CALL_AUDIO_INTERCEPTION" to if (state.callAudioInterceptionGranted) "granted" else "not granted",
         "Framework APIs" to frameworkPresenceText(state),

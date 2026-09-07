@@ -43,7 +43,7 @@ class BackendLogicTest {
             ).state
         )
         assertEquals(
-            CapabilityState.DeviceNotInterceptable,
+            CapabilityState.PstnInterceptionUnsupported,
             CapabilityFailureMapper.fromThrowable(
                 AudioBackendId.FrameworkInterception,
                 UnsupportedOperationException("PSTN call audio not accessible")
