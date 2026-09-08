@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Claude Branch Ownership
 
-Claude's SimRelay work is restricted to:
+Claude's permanent workspace is this worktree:
+
+`/home/uzair401/projects/SimRelayM0-nonroot`
+
+and the only branch Claude works on is:
 
 `experiment/non-root-provisioning`
 
@@ -14,7 +18,13 @@ At the beginning of every session:
 git branch --show-current
 ```
 
-If the output is not `experiment/non-root-provisioning`, switch to it (`git checkout experiment/non-root-provisioning`) before making any changes. Do not commit or push to `main` or any other branch.
+If the output is not `experiment/non-root-provisioning`, **stop**: do not modify files, do not commit, do not run destructive operations, and report the unexpected state. **Never switch branches in this worktree** — switching is not the remedy. Do not commit or push to `main` or any other branch.
+
+Codex owns the rooted/main prototype track in a separate worktree:
+
+`/home/uzair401/projects/SimRelayM0` on `main`
+
+Do not modify, merge, rebase, or cherry-pick Codex or `main` work unless explicitly instructed, and never merge this branch into `main`. History and files on other branches may be inspected read-only; every modification stays in this worktree on `experiment/non-root-provisioning`.
 
 ## What this project is
 
