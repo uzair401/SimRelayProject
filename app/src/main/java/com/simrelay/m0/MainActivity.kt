@@ -137,6 +137,8 @@ private fun DiagnosticScreen(
         "Framework capability" to state.capabilityState,
         "Session readiness" to state.readiness,
         "CALL_AUDIO_INTERCEPTION" to if (state.callAudioInterceptionGranted) "granted" else "not granted",
+        "Provisioning route" to state.provisioningRoute,
+        "Provisioning requirement" to (state.provisioningSummary ?: "not evaluated"),
         "Framework APIs" to frameworkPresenceText(state),
         "PSTN interceptable" to (state.pstnInterceptable?.toString() ?: "not evaluated"),
         "Call state" to state.callState.name,

@@ -4,6 +4,7 @@ import com.simrelay.m0.audio.AudioBackendId
 import com.simrelay.m0.audio.FrameworkApiPresence
 import com.simrelay.m0.audio.SessionState
 import com.simrelay.m0.call.CallState
+import com.simrelay.m0.diagnostics.ProvisioningRoute
 
 data class M0UiState(
     val deviceModel: String,
@@ -13,6 +14,8 @@ data class M0UiState(
     val capabilityState: String = "Unknown",
     val readiness: String = "Unknown",
     val callAudioInterceptionGranted: Boolean = false,
+    val provisioningRoute: String = ProvisioningRoute.Unknown.name,
+    val provisioningSummary: String? = null,
     val frameworkApiPresence: FrameworkApiPresence = FrameworkApiPresence.Unknown,
     val pstnInterceptable: Boolean? = null,
     val callState: CallState = CallState.Unknown,

@@ -43,6 +43,7 @@ class CapabilityProbe(private val context: Context) {
                 selection.readiness,
                 selection.backend.id
             ),
+            provisioning = ProvisioningPathSnapshot.capture(context),
             events = emptyList()
         )
         return report to selection

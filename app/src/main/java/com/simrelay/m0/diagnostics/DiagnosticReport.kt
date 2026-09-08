@@ -20,6 +20,7 @@ data class DiagnosticReport(
     val readiness: CallAudioReadiness,
     val callState: CallState,
     val qualification: DeviceQualificationProfile,
+    val provisioning: ProvisioningPathSnapshot,
     val metrics: PcmMetricSummary? = null,
     val events: List<DiagnosticEvent> = emptyList()
 ) {
@@ -33,6 +34,7 @@ data class DiagnosticReport(
             "audioMode" to (readiness.audioMode?.toString() ?: "null")
         ),
         "callState" to JsonText.string(callState.name),
+        "provisioning" to provisioning.toJson(),
         "backends" to JsonText.array(backendReports.map(::capabilityJson)),
         "events" to JsonText.array(events.map(DiagnosticEvent::toJson))
     )

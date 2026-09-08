@@ -22,6 +22,7 @@ class DiagnosticExporter(private val context: Context) {
         File(runDirectory, "probe.json").writeText(report.probeJson())
         File(runDirectory, "metrics.json").writeText(report.metricsJson())
         File(runDirectory, "qualification.json").writeText(report.qualification.toJson())
+        File(runDirectory, "provisioning.json").writeText(report.provisioning.toJson())
         File(runDirectory, "app.log").writeText(
             report.events.joinToString(separator = "\n", postfix = "\n", transform = DiagnosticEvent::toLogLine)
         )

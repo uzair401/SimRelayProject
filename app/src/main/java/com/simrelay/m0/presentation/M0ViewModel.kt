@@ -205,6 +205,14 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
                 recordEvent(
+                    "provisioning_route",
+                    "route=${mergedReport.provisioning.route} " +
+                        "roleAvailability=${mergedReport.provisioning.roleAvailability} " +
+                        "roleHeld=${mergedReport.provisioning.roleHeld} " +
+                        "systemApp=${mergedReport.provisioning.systemApplication} " +
+                        "api=${mergedReport.provisioning.apiLevel}"
+                )
+                recordEvent(
                     "probe_completed",
                     "backend=${selection.backend.id.value} capability=${selection.capability.state} readiness=${selection.readiness.state}"
                 )
@@ -216,6 +224,8 @@ class M0ViewModel(application: Application) : AndroidViewModel(application) {
                         callAudioInterceptionGranted = mergedReport.permissions.isGranted(
                             PermissionSnapshot.CallAudioInterception
                         ),
+                        provisioningRoute = mergedReport.provisioning.route.name,
+                        provisioningSummary = mergedReport.provisioning.summary,
                         frameworkApiPresence = framework?.apiPresence ?: state.frameworkApiPresence,
                         pstnInterceptable = framework?.pstnInterceptable,
                         audioMode = mergedReport.audioSystem.mode.name,
