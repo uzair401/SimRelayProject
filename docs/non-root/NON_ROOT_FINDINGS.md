@@ -152,15 +152,68 @@ Confidence values: `ConfirmedByAospSource`, `ConfirmedOnProductionDevice`, `Conf
 
 ---
 
-### NR-013 — Android 16 gates concurrent-capture bypass on permissions the role does not grant
+### NR-013 — RESOLVED: Android 16 concurrent-capture policy is not a blocker for the role path
 
 - **Android/API:** 16
 - **Environment:** AOSP source
-- **Observation:** Concurrent-capture bypass is gated on `CAPTURE_AUDIO_OUTPUT` or `BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION`. A role-provisioned holder has neither. Whether that exposes role-provisioned downlink capture to concurrent-capture silencing during a live call is untested.
-- **Evidence:** `frameworks/av` `android16-release` `services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp:875-889`
-- **Confidence:** `NotTested` (the code is `ConfirmedByAospSource`; the consequence is not)
-- **Impact on architecture:** Potential late, expensive surprise for the role path. If real, the role alone may be insufficient on Android 16 and a privileged grant of one additional permission may be needed.
-- **Potential main-branch change:** None yet. Tracked as the deferred experiment in `NON_ROOT_EXPERIMENT_PLAN.md`.
+- **Observation:** The concern was that concurrent-capture bypass is gated on `CAPTURE_AUDIO_OUTPUT` or `BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION`, neither of which the role grants, and that `updateUidStates_l` denies capture while `isInCall` unless the client can bypass (`return !(isInCall && !canCaptureCall)`). **That restriction is overridden for call-audio clients.** In the same function, virtual sources are allowed unconditionally:
+
+  ```cpp
+  } else if (isVirtualSource(source)) {
+      // Allow capture for virtual (remote submix, call audio TX or RX...) sources
+      allowCapture = true;
+  }
+  ```
+
+  and `isVirtualSource()` returns true for `AUDIO_SOURCE_VOICE_UPLINK`, `AUDIO_SOURCE_VOICE_DOWNLINK` and `AUDIO_SOURCE_VOICE_CALL`. `silenceAllRecordings_l()` likewise skips virtual sources. Since `getCallDownlinkExtractionAudioRecord` uses the `VOICE_DOWNLINK` capture preset (NR-010), a role-provisioned holder is exempt from both the in-call concurrent-capture restriction and blanket silencing.
+- **Evidence:** `frameworks/av` `android16-release` `services/audiopolicy/service/AudioPolicyService.cpp:1062-1099` (in-call gate and virtual-source override), `:1202-1216` (`isVirtualSource` body), `:1180-1187` (`silenceAllRecordings_l`); `services/audiopolicy/service/AudioPolicyInterfaceImpl.cpp:875-889` (origin of the concern)
+- **Confidence:** `ConfirmedByAospSource` (runtime confirmation still pending a real call on a role-provisioned Android 16 host)
+- **Impact on architecture:** Removes the main identified late risk from the role path. `CAPTURE_AUDIO_OUTPUT` and `BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION` are not needed for downlink capture on Android 16.
+- **Potential main-branch change:** None. Strengthens the case that the least-privilege permission set is sufficient on both tracks.
+
+---
+
+### NR-015 — A static role can only be held by a package already named in the platform default-holder config
+
+- **Android/API:** 14+
+- **Environment:** AOSP source
+- **Observation:** This is stronger than NR-005. `Role.isPackageQualifiedAsUser()` ends with:
+
+  ```java
+  if (mStatic && !getDefaultHoldersAsUser(user, context).contains(packageName)) {
+      return false;
+  }
+  ```
+
+  Because `SYSTEM_CALL_STREAMING` is `static="true"`, a package **cannot qualify at all** unless it is already listed in `config_systemCallStreaming`. Being a system app and declaring the required service are necessary but not sufficient. The only short-circuit is `isBypassingQualification()`, the `BYPASS_ROLE_QUALIFICATION` test facility. So `cmd role add-role-holder` cannot succeed for this role on a stock build regardless of how the app is packaged.
+- **Evidence:** `packages/modules/Permission` `android16-release` `PermissionController/role-controller/java/com/android/role/controller/model/Role.java:649-695` (qualification), `:530-555` (default holder resolution)
+- **Confidence:** `ConfirmedByAospSource`
+- **Impact on architecture:** The platform `config_systemCallStreaming` value is not merely the *normal* way to assign the role — it is the *only* way. This makes the framework-res configuration the single hard OEM dependency of the non-root route, and it means the role cannot be granted by ADB, by a user, or by any app-side packaging choice.
+- **Potential main-branch change:** None to code. It sharpens the minimum-OEM-integration statement in the product docs.
+
+---
+
+### NR-016 — The exact role qualification contract, and the minimum app-side integration
+
+- **Android/API:** 14+
+- **Environment:** AOSP source, implemented in this branch
+- **Observation:** The role controller resolves the required component with `PackageManager.queryIntentServices(Intent("android.telecom.CallStreamingService"))` scoped to the package, and accepts a service only when `resolveInfo.serviceInfo.permission` equals `android.permission.BIND_CALL_STREAMING_SERVICE` exactly. The role declares no component flags and no metadata requirements, and `isComponentQualified()` returns true unconditionally, so nothing further is required of the component. `isRequired()` applies the requirement only when `applicationInfo.targetSdkVersion >= minTargetSdkVersion` (unset for this role).
+- **Evidence:** `PermissionController/role-controller/java/com/android/role/controller/model/RequiredComponent.java:125-127, 178-250, 266-268`; `RequiredService.java:26-52`; `IntentFilterData.java:97-107`
+- **Confidence:** `ConfirmedByAospSource`
+- **Impact on architecture:** The app-side integration is a single exported `<service>` declaration guarding on `BIND_CALL_STREAMING_SERVICE` with that action. Implemented as `com.simrelay.m0.provisioning.CallStreamingQualificationService`, isolated in a `provisioning` package, inert where the role does not exist. It cannot extend the `@SystemApi` `CallStreamingService` with the public SDK, and per NR-012 it is a qualification component only — it must not be treated as a call-audio path.
+- **Potential main-branch change:** Deferred. The manifest declaration is harmless on all API levels but should only move to `main` if the role route is adopted, since it advertises a Telecom service the app does not implement.
+
+---
+
+### NR-017 — The `RECORD_AUDIO` app op still gates capture on every provisioning route
+
+- **Android/API:** 16 (mechanism long-standing)
+- **Environment:** AOSP source
+- **Observation:** In `updateUidStates_l`, the app-op check runs *before* the virtual-source exemption: `if (!current->hasOp()) { allowCapture = false; }`. So a denied or foreground-only `RECORD_AUDIO` app op silences capture even for call-audio sources and even with `CALL_AUDIO_INTERCEPTION` held.
+- **Evidence:** `frameworks/av` `android16-release` `services/audiopolicy/service/AudioPolicyService.cpp:1093-1095`
+- **Confidence:** `ConfirmedByAospSource`
+- **Impact on architecture:** Independent of provisioning route, so it affects the rooted track identically. It is the same hazard the rooted research recorded (`sim-relay-stack-decisions.md` §2.5: `PermissionController` resetting `RECORD_AUDIO` to `MODE_FOREGROUND` and breaking background capture). Relevant when the host must capture with the screen off.
+- **Potential main-branch change:** Worth recording in the shared architecture notes as a route-independent risk, so neither track assumes it is a root or role artefact.
 
 ---
 
