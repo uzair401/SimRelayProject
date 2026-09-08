@@ -9,6 +9,27 @@ Evidence classes: `ConfirmedByAospSource`, `ConfirmedOnEmulator`, `ConfirmedOnPr
 
 ---
 
+## Acceptance criteria for the emulator experiments
+
+Agreed before running them, so results cannot be graded generously after the fact.
+
+1. **NR-013 stays `ConfirmedByAospSource`.** It is closed as runtime-confirmed only if the API 36 experiment produces runtime evidence supporting it. Source agreement alone does not upgrade it.
+2. **The RRO is an emulator representation of OEM/system-image provisioning, nothing more.** Setting `config_systemCallStreaming` through a preinstalled runtime resource overlay stands in for what an OEM does in its `framework-res` build. It is explicitly **not** a retail-device deployment mechanism and must never be reported as one.
+3. **Experiment 4 must verify the complete chain**, each link observed independently:
+   `config_systemCallStreaming` → role qualification → role holder → **actual `PackageManager` permission grant**.
+   Role-holder state alone is *not* success.
+4. **Four permissions are captured explicitly** on every run, granted or not:
+   `CALL_AUDIO_INTERCEPTION`, `RECORD_AUDIO`, `CAPTURE_AUDIO_OUTPUT`, `BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION`.
+   The last two are expected to remain **absent**; their absence is part of the least-privilege claim.
+5. **The existing `FrameworkInterceptionBackend` runs unmodified** once the permission is genuinely granted. No separate non-root backend is created. Any change to the backend requires a demonstrated generic defect, recorded as a finding first.
+6. **Missing PSTN hardware on an emulator is not a provisioning failure.** Results are reported as three separable states:
+   - `PermissionProvisioningWorks` — the role produced a real `CALL_AUDIO_INTERCEPTION` grant.
+   - `FrameworkApiAccessible` — the three `AudioManager` methods are reachable and callable by this build.
+   - `PstnHardwareUnavailable` — `isPstnCallAudioInterceptable()` is false or session opening fails for want of telephony audio devices.
+   The first two can hold while the third is true; that combination is a *success* for this track.
+
+---
+
 ## 0. Environment status and authorisations needed
 
 Inspected read-only on 2026-09-08:
@@ -24,7 +45,7 @@ Inspected read-only on 2026-09-08:
 | KVM | `/dev/kvm` present (hardware acceleration available) |
 | Connected device | `R58R83A9F7N` — Device #1, Samsung SM-A225F, Android 13 / API 33 |
 
-**Authorisation required before Experiment 2 and beyond.** Creating the emulator environment means `sdkmanager` downloading system images (roughly 1.5–3 GB each), which modifies the Android SDK installation. Per `AGENTS.md` §28 that needs explicit user approval. Requested set, smallest useful first:
+**Authorisation granted 2026-09-09** for Android SDK / system-image downloads and normal AVD setup, with no other host changes. Downloads in progress at time of writing. Requested set, smallest useful first:
 
 ```
 system-images;android-34;google_apis;x86_64      # Experiment 2 (role discovery, non-writable)
