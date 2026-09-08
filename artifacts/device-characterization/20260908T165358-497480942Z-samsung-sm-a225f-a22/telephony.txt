@@ -1,0 +1,10 @@
+    mCallState=0
+    mVoiceActivationState= 0
+    mDataActivationState= 0
+    mDataActivity=3
+    mDataConnectionState=0
+    mCallState=0
+    mVoiceActivationState= 0
+    mDataActivationState= 0
+    mDataActivity=3
+    mDataConnectionState=2

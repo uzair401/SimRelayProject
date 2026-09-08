@@ -1,0 +1,15 @@
+124584865136222 call_state_changed from=Unknown to=Idle
+124589441209684 probe_started callState=Idle audioMode=0
+124589460961684 call_state_changed from=Idle to=Idle
+124589579005760 backend_selected backend=framework_interception
+124589579515222 framework_api_state interceptability=Accessible downlink=Accessible uplink=Accessible
+124589579920222 pstn_interceptable value=Unknown
+124589580304145 capability_changed backend=framework_interception state=PermissionMissing
+124589580644837 readiness_changed state=PermissionMissing callState=Idle audioMode=0
+124589581055222 permission_state name=android.permission.CALL_AUDIO_INTERCEPTION declared=true granted=false protection=SignatureOrPrivilegedOrRole
+124589581426376 permission_state name=android.permission.CAPTURE_AUDIO_OUTPUT declared=true granted=false protection=SignatureOrPrivilegedOrRole
+124589581909991 permission_state name=android.permission.MODIFY_PHONE_STATE declared=true granted=false protection=SignatureOrPrivilegedOrRole
+124589582338914 permission_state name=android.permission.READ_PHONE_STATE declared=true granted=true protection=Runtime
+124589582667222 permission_state name=android.permission.RECORD_AUDIO declared=true granted=true protection=Runtime
+124589583017145 permission_state name=com.simrelay.m0.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION declared=true granted=true protection=SignatureOrPrivilegedOrRole
+124589583336530 probe_completed backend=framework_interception capability=PermissionMissing readiness=PermissionMissing

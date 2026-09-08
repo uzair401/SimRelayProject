@@ -1,0 +1,145 @@
+{
+  "runId": "20260908-080938-758-80803ed4-c4a3-4ef6-ad11-23b6ba7a7976",
+  "capturedAtEpochMillis": 1788854978758,
+  "selectedBackend": "framework_interception",
+  "readiness": {
+  "state": "PermissionMissing",
+  "message": "CALL_AUDIO_INTERCEPTION is not granted",
+  "audioMode": 0
+},
+  "callState": "Idle",
+  "backends": [{
+  "backend": "framework_interception",
+  "state": "PermissionMissing",
+  "message": "CALL_AUDIO_INTERCEPTION is not granted",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "legacy_privileged",
+  "state": "NotImplemented",
+  "message": "Legacy privileged backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "vendor_audio",
+  "state": "NotImplemented",
+  "message": "Vendor audio backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}],
+  "events": [{
+  "elapsedRealtimeNanos": 124584865136222,
+  "name": "call_state_changed",
+  "detail": "from=Unknown to=Idle"
+}, {
+  "elapsedRealtimeNanos": 124589441209684,
+  "name": "probe_started",
+  "detail": "callState=Idle audioMode=0"
+}, {
+  "elapsedRealtimeNanos": 124589460961684,
+  "name": "call_state_changed",
+  "detail": "from=Idle to=Idle"
+}, {
+  "elapsedRealtimeNanos": 124589579005760,
+  "name": "backend_selected",
+  "detail": "backend=framework_interception"
+}, {
+  "elapsedRealtimeNanos": 124589579515222,
+  "name": "framework_api_state",
+  "detail": "interceptability=Accessible downlink=Accessible uplink=Accessible"
+}, {
+  "elapsedRealtimeNanos": 124589579920222,
+  "name": "pstn_interceptable",
+  "detail": "value=Unknown"
+}, {
+  "elapsedRealtimeNanos": 124589580304145,
+  "name": "capability_changed",
+  "detail": "backend=framework_interception state=PermissionMissing"
+}, {
+  "elapsedRealtimeNanos": 124589580644837,
+  "name": "readiness_changed",
+  "detail": "state=PermissionMissing callState=Idle audioMode=0"
+}, {
+  "elapsedRealtimeNanos": 124589581055222,
+  "name": "permission_state",
+  "detail": "name=android.permission.CALL_AUDIO_INTERCEPTION declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 124589581426376,
+  "name": "permission_state",
+  "detail": "name=android.permission.CAPTURE_AUDIO_OUTPUT declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 124589581909991,
+  "name": "permission_state",
+  "detail": "name=android.permission.MODIFY_PHONE_STATE declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 124589582338914,
+  "name": "permission_state",
+  "detail": "name=android.permission.READ_PHONE_STATE declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 124589582667222,
+  "name": "permission_state",
+  "detail": "name=android.permission.RECORD_AUDIO declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 124589583017145,
+  "name": "permission_state",
+  "detail": "name=com.simrelay.m0.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION declared=true granted=true protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 124589583336530,
+  "name": "probe_completed",
+  "detail": "backend=framework_interception capability=PermissionMissing readiness=PermissionMissing"
+}]
+}
