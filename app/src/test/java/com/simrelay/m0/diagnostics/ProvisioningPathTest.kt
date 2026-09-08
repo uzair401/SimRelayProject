@@ -1,5 +1,6 @@
 package com.simrelay.m0.diagnostics
 
+import com.simrelay.m0.provisioning.CallStreamingQualificationService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -132,7 +133,33 @@ class ProvisioningPathTest {
         assertTrue(json.contains("\"roleAvailability\": \"Available\""))
         assertTrue(json.contains("\"route\": \"RoleAvailableSystemAppRequired\""))
         assertTrue(json.contains("\"requiresSystemIntegration\": true"))
+        assertTrue(json.contains("\"qualificationComponentDeclared\": true"))
         assertTrue(json.contains("\"summary\": \"System integration required"))
+    }
+
+    @Test
+    fun matchesTheRoleQualificationContractDeclaredByAosp() {
+        assertEquals(
+            "android.telecom.CallStreamingService",
+            CallStreamingQualificationService.ServiceAction
+        )
+        assertEquals(
+            "android.permission.BIND_CALL_STREAMING_SERVICE",
+            CallStreamingQualificationService.BindPermission
+        )
+        assertEquals(
+            "android.app.role.SYSTEM_CALL_STREAMING",
+            ProvisioningPathSnapshot.SystemCallStreamingRole
+        )
+    }
+
+    @Test
+    fun reportsMissingQualificationComponentWithoutChangingTheProvisioningRoute() {
+        val declared = snapshot(ProvisioningRoute.RoleAvailableSystemAppRequired)
+        val undeclared = declared.copy(qualificationComponentDeclared = false)
+
+        assertEquals(declared.route, undeclared.route)
+        assertTrue(undeclared.toJson().contains("\"qualificationComponentDeclared\": false"))
     }
 
     @Test
@@ -154,6 +181,7 @@ class ProvisioningPathTest {
         roleHeld = route == ProvisioningRoute.RoleHeldPermissionMissing,
         roleQueryFailure = null,
         systemApplication = false,
+        qualificationComponentDeclared = true,
         route = route
     )
 }

@@ -2,10 +2,12 @@ package com.simrelay.m0.diagnostics
 
 import android.app.role.RoleManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.simrelay.m0.provisioning.CallStreamingQualificationService
 import com.simrelay.m0.util.JsonText
 
 enum class RoleAvailability {
@@ -38,6 +40,7 @@ data class ProvisioningPathSnapshot(
     val roleHeld: Boolean,
     val roleQueryFailure: String?,
     val systemApplication: Boolean,
+    val qualificationComponentDeclared: Boolean,
     val route: ProvisioningRoute
 ) {
     val requiresSystemIntegration: Boolean
@@ -67,6 +70,7 @@ data class ProvisioningPathSnapshot(
         "roleHeld" to roleHeld.toString(),
         "roleQueryFailure" to JsonText.string(roleQueryFailure),
         "systemApplication" to systemApplication.toString(),
+        "qualificationComponentDeclared" to qualificationComponentDeclared.toString(),
         "route" to JsonText.string(route.name),
         "requiresSystemIntegration" to requiresSystemIntegration.toString(),
         "summary" to JsonText.string(summary)
@@ -94,6 +98,7 @@ data class ProvisioningPathSnapshot(
                 roleHeld = roleState.held,
                 roleQueryFailure = roleState.queryFailure,
                 systemApplication = systemApplication,
+                qualificationComponentDeclared = qualificationComponentDeclared(context),
                 route = ProvisioningPathEvaluator.evaluate(
                     callAudioInterceptionGranted = granted,
                     roleAvailability = roleState.availability,
@@ -102,6 +107,25 @@ data class ProvisioningPathSnapshot(
                 )
             )
         }
+
+        private fun qualificationComponentDeclared(context: Context): Boolean {
+            val intent = Intent(CallStreamingQualificationService.ServiceAction)
+                .setPackage(context.packageName)
+            return resolveServices(context, intent).any { resolveInfo ->
+                resolveInfo.serviceInfo?.permission == CallStreamingQualificationService.BindPermission
+            }
+        }
+
+        @Suppress("DEPRECATION")
+        private fun resolveServices(context: Context, intent: Intent) =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.queryIntentServices(
+                    intent,
+                    PackageManager.ResolveInfoFlags.of(0L)
+                )
+            } else {
+                context.packageManager.queryIntentServices(intent, 0)
+            }
 
         private fun roleState(context: Context): RoleState =
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {

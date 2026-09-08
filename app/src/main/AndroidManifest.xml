@@ -38,6 +38,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".provisioning.CallStreamingQualificationService"
+            android:exported="true"
+            android:permission="android.permission.BIND_CALL_STREAMING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallStreamingService" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
