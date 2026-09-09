@@ -1,0 +1,13 @@
+{
+  "apiLevel": 34,
+  "callAudioInterceptionGranted": false,
+  "roleName": "android.app.role.SYSTEM_CALL_STREAMING",
+  "roleAvailability": "Available",
+  "roleHeld": false,
+  "roleQueryFailure": null,
+  "systemApplication": false,
+  "qualificationComponentDeclared": true,
+  "route": "RoleAvailableSystemAppRequired",
+  "requiresSystemIntegration": true,
+  "summary": "System integration required: system-app installation, then role holder configuration"
+}

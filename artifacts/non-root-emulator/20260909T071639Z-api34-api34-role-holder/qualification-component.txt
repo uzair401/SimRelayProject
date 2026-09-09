@@ -1,0 +1,37 @@
+== call streaming qualification component visibility ==
+1 services found:
+  Service #0:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    ServiceInfo:
+      name=com.simrelay.m0.provisioning.CallStreamingQualificationService
+      packageName=com.simrelay.m0
+      enabled=true exported=true directBootAware=false
+      permission=android.permission.BIND_CALL_STREAMING_SERVICE
+      flags=0x0
+      ApplicationInfo:
+        packageName=com.simrelay.m0
+        labelRes=0x7f090003 nonLocalizedLabel=null icon=0x7f080001 banner=0x0
+        processName=com.simrelay.m0
+        taskAffinity=com.simrelay.m0
+        uid=10193 flags=0x20c83e47 privateFlags=0x8c001000 theme=0x7f0a0009
+        requiresSmallestWidthDp=0 compatibleWidthLimitDp=0 largestWidthLimitDp=0
+        sourceDir=/system/app/SimRelayM0/SimRelayM0.apk
+        resourceDirs=[/product/overlay/EmulationPixel6/EmulationPixel6Overlay.apk, /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk]
+        overlayPaths=[/product/overlay/EmulationPixel6/EmulationPixel6Overlay.apk, /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk, /data/resource-cache/com.android.systemui-neutral-9YAF.frro, /data/resource-cache/com.android.systemui-accent-RE00.frro, /data/resource-cache/com.android.systemui-dynamic-T2Vd.frro]
+        seinfo=default:targetSdkVersion=36
+        seinfoUser=:complete
+        dataDir=/data/user/0/com.simrelay.m0
+        deviceProtectedDataDir=/data/user_de/0/com.simrelay.m0
+        credentialProtectedDataDir=/data/user/0/com.simrelay.m0
+        sharedLibraryFiles=[/system_ext/framework/androidx.window.extensions.jar, /system_ext/framework/androidx.window.sidecar.jar]
+        enabled=true minSdkVersion=24 targetSdkVersion=36 versionCode=1 targetSandboxVersion=1
+        supportsRtl=true
+        fullBackupContent=true
+        dataExtractionRules=@xml/2131492865
+        crossProfile=false
+        HiddenApiEnforcementPolicy=2
+        usesNonSdkApi=false
+        allowsPlaybackCapture=true
+        nativeHeapZeroInitialized=0
+        enableOnBackInvokedCallback=false
+        createTimestamp=154308

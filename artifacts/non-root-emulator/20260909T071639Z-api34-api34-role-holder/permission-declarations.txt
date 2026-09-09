@@ -1,0 +1,11 @@
+== declared protection level of CALL_AUDIO_INTERCEPTION ==
+  Permission [android.permission.CALL_AUDIO_INTERCEPTION] (b28cae2):
+    sourcePackage=android
+    uid=1000 gids=[] type=0 prot=signature|privileged|role
+    perm=PermissionInfo{afb6e73 android.permission.CALL_AUDIO_INTERCEPTION}
+    flags=0x0
+  Permission [com.google.android.gm.email.permission.READ_ATTACHMENT] (8a74130):
+    sourcePackage=com.google.android.gm
+
+== declared protection level of RECORD_AUDIO ==
+not found

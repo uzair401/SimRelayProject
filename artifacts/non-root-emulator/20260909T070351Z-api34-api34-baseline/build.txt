@@ -1,0 +1,15 @@
+probe_generated_at_utc=20260909T070351Z
+adb_serial=emulator-5554
+ro.build.version.sdk=34
+ro.build.version.release=14
+ro.build.version.security_patch=2023-09-05
+ro.build.fingerprint=google/sdk_gphone64_x86_64/emu64xa:14/UE1A.230829.050/12077443:userdebug/dev-keys
+ro.build.type=userdebug
+ro.build.tags=dev-keys
+ro.product.model=sdk_gphone64_x86_64
+ro.product.device=emu64xa
+ro.product.name=sdk_gphone64_x86_64
+ro.hardware=ranchu
+ro.debuggable=1
+ro.secure=1
+ro.boot.verifiedbootstate=

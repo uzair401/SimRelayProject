@@ -1,0 +1,158 @@
+{
+  "runId": "20260909-070616-608-28dfab49-0ed1-4311-8bf8-5a57832ed258",
+  "capturedAtEpochMillis": 1788937576608,
+  "selectedBackend": "framework_interception",
+  "readiness": {
+  "state": "PermissionMissing",
+  "message": "CALL_AUDIO_INTERCEPTION is not granted",
+  "audioMode": 0
+},
+  "callState": "Idle",
+  "provisioning": {
+  "apiLevel": 34,
+  "callAudioInterceptionGranted": false,
+  "roleName": "android.app.role.SYSTEM_CALL_STREAMING",
+  "roleAvailability": "Available",
+  "roleHeld": false,
+  "roleQueryFailure": null,
+  "systemApplication": false,
+  "qualificationComponentDeclared": true,
+  "route": "RoleAvailableSystemAppRequired",
+  "requiresSystemIntegration": true,
+  "summary": "System integration required: system-app installation, then role holder configuration"
+},
+  "backends": [{
+  "backend": "framework_interception",
+  "state": "PermissionMissing",
+  "message": "CALL_AUDIO_INTERCEPTION is not granted",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "legacy_privileged",
+  "state": "NotImplemented",
+  "message": "Legacy privileged backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "vendor_audio",
+  "state": "NotImplemented",
+  "message": "Vendor audio backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}],
+  "events": [{
+  "elapsedRealtimeNanos": 212245319608,
+  "name": "probe_started",
+  "detail": "callState=Unknown audioMode=0"
+}, {
+  "elapsedRealtimeNanos": 212255766293,
+  "name": "call_state_changed",
+  "detail": "from=Unknown to=Idle"
+}, {
+  "elapsedRealtimeNanos": 213433189581,
+  "name": "backend_selected",
+  "detail": "backend=framework_interception"
+}, {
+  "elapsedRealtimeNanos": 213437968873,
+  "name": "framework_api_state",
+  "detail": "interceptability=Accessible downlink=Accessible uplink=Accessible"
+}, {
+  "elapsedRealtimeNanos": 213442100092,
+  "name": "pstn_interceptable",
+  "detail": "value=Unknown"
+}, {
+  "elapsedRealtimeNanos": 213468253892,
+  "name": "capability_changed",
+  "detail": "backend=framework_interception state=PermissionMissing"
+}, {
+  "elapsedRealtimeNanos": 213500457334,
+  "name": "readiness_changed",
+  "detail": "state=PermissionMissing callState=Idle audioMode=0"
+}, {
+  "elapsedRealtimeNanos": 213535099098,
+  "name": "permission_state",
+  "detail": "name=android.permission.CALL_AUDIO_INTERCEPTION declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 213546842187,
+  "name": "permission_state",
+  "detail": "name=android.permission.CAPTURE_AUDIO_OUTPUT declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 213642545498,
+  "name": "permission_state",
+  "detail": "name=android.permission.MODIFY_PHONE_STATE declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 213667849354,
+  "name": "permission_state",
+  "detail": "name=android.permission.READ_PHONE_STATE declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 213683738044,
+  "name": "permission_state",
+  "detail": "name=android.permission.RECORD_AUDIO declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 213692370639,
+  "name": "permission_state",
+  "detail": "name=com.simrelay.m0.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION declared=true granted=true protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 213695449963,
+  "name": "provisioning_route",
+  "detail": "route=RoleAvailableSystemAppRequired roleAvailability=Available roleHeld=false systemApp=false api=34"
+}, {
+  "elapsedRealtimeNanos": 213701364522,
+  "name": "probe_completed",
+  "detail": "backend=framework_interception capability=PermissionMissing readiness=PermissionMissing"
+}]
+}

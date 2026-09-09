@@ -116,12 +116,25 @@ echo "run_dir=$run_dir"
 {
     echo "== package flags =="
     adb_shell dumpsys package "$probe_package" 2>&1 \
-        | grep -E 'versionCode|codePath|flags=|privateFlags=|apkSigningVersion' | head -20
+        | grep -E 'versionCode|codePath|flags=|privateFlags=|apkSigningVersion' \
+        | head -20 || echo "(package not installed or no matching fields)"
     echo
     echo "== requested and granted permissions =="
     adb_shell dumpsys package "$probe_package" 2>&1 \
-        | grep -E 'CALL_AUDIO_INTERCEPTION|RECORD_AUDIO|CAPTURE_AUDIO_OUTPUT|MODIFY_PHONE_STATE|READ_PHONE_STATE' \
-        | sed 's/^[[:space:]]*//' | sort -u
+        | grep -E 'CALL_AUDIO_INTERCEPTION|RECORD_AUDIO|CAPTURE_AUDIO_OUTPUT|MODIFY_PHONE_STATE|BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION|READ_PHONE_STATE' \
+        | sed 's/^[[:space:]]*//' | sort -u || echo "(package not installed)"
+    echo
+    echo "== platform declarations of the four tracked permissions =="
+    for permission in \
+        android.permission.CALL_AUDIO_INTERCEPTION \
+        android.permission.RECORD_AUDIO \
+        android.permission.CAPTURE_AUDIO_OUTPUT \
+        android.permission.BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION
+    do
+        line="$(adb_shell dumpsys package permissions 2>&1 \
+            | grep -A3 "Permission \[$permission\]" | grep 'prot=' | head -1 | tr -d '\r' || true)"
+        echo "$permission ${line:-(not declared on this build)}"
+    done
 } > "$run_dir/package-state.txt" 2>&1
 
 {
@@ -132,8 +145,9 @@ echo "run_dir=$run_dir"
 
 {
     echo "== audio mode and telephony summary =="
-    adb_shell dumpsys audio 2>&1 | grep -E '^- mode:|Mode dump|audio mode' | head -10
-    adb_shell getprop gsm.sim.state | tr -d '\r'
+    adb_shell dumpsys audio 2>&1 | grep -E '^- mode:|Mode dump|audio mode' | head -10 \
+        || echo "(no audio mode line matched)"
+    adb_shell getprop gsm.sim.state | tr -d '\r' || true
 } > "$run_dir/audio-telephony.txt" 2>&1
 
 echo "collected: build.txt permission-declarations.txt role-holders.txt platform-config.txt package-state.txt qualification-component.txt audio-telephony.txt"

@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "manufacturer": "Google",
+  "model": "sdk_gphone64_x86_64",
+  "device": "emu64xa",
+  "board": "goldfish_x86_64",
+  "hardware": "ranchu",
+  "androidVersion": "14",
+  "apiLevel": 34,
+  "buildFingerprint": "google/sdk_gphone64_x86_64/emu64xa:14/UE1A.230829.050/12077443:userdebug/dev-keys",
+  "securityState": {
+  "evidence": "Unknown",
+  "value": null,
+  "detail": "Collected by the external read-only device probe"
+},
+  "frameworkApiPresent": {
+  "evidence": "Observed",
+  "value": "true",
+  "detail": null
+},
+  "frameworkApiAccessible": {
+  "evidence": "Observed",
+  "value": "true",
+  "detail": null
+},
+  "frameworkCapability": {
+  "evidence": "Observed",
+  "value": "Supported",
+  "detail": "Framework PSTN interception is available"
+},
+  "callAudioInterceptionPermission": {
+  "evidence": "Observed",
+  "value": "DeclaredAndGranted",
+  "detail": "protection=SignatureOrPrivilegedOrRole unavailableToNormalApp=false"
+},
+  "pstnInterceptable": {
+  "evidence": "Observed",
+  "value": "true",
+  "detail": null
+},
+  "sessionReadiness": {
+  "evidence": "Observed",
+  "value": "SessionNotReady",
+  "detail": "No active call is currently observed"
+},
+  "supportedSampleRates": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires an audio session"
+},
+  "rxResult": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires a real PSTN experiment"
+},
+  "txResult": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires a real PSTN experiment"
+},
+  "fullDuplexResult": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires a real PSTN experiment"
+},
+  "micIsolation": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires a real PSTN experiment"
+},
+  "speakerIsolation": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires a real PSTN experiment"
+},
+  "latency": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires a real PSTN experiment"
+},
+  "stability": {
+  "evidence": "NotTested",
+  "value": null,
+  "detail": "Requires repeat and duration experiments"
+},
+  "requiredBackend": {
+  "evidence": "Observed",
+  "value": "framework_interception",
+  "detail": null
+},
+  "requiredProvisioning": {
+  "evidence": "Observed",
+  "value": "none_observed",
+  "detail": null
+}
+}

@@ -5,6 +5,8 @@ set -euo pipefail
 overlay_holder_package="com.simrelay.m0"
 overlay_package="com.simrelay.roleoverlay"
 overlay_min_sdk="34"
+overlay_priority="9999"
+overlay_static="true"
 overlay_out_dir="build/non-root/role-overlay"
 overlay_sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
 overlay_build_tools=""
@@ -24,6 +26,16 @@ while (($# > 0)); do
         --min-sdk)
             [[ $# -ge 2 ]] || { echo "--min-sdk requires a value" >&2; exit 2; }
             overlay_min_sdk="$2"
+            shift 2
+            ;;
+        --priority)
+            [[ $# -ge 2 ]] || { echo "--priority requires a value" >&2; exit 2; }
+            overlay_priority="$2"
+            shift 2
+            ;;
+        --static)
+            [[ $# -ge 2 ]] || { echo "--static requires true or false" >&2; exit 2; }
+            overlay_static="$2"
             shift 2
             ;;
         --build-tools)
@@ -70,8 +82,8 @@ cat > "$source_dir/AndroidManifest.xml" <<EOF
     <application android:hasCode="false" />
     <overlay
         android:targetPackage="android"
-        android:priority="1"
-        android:isStatic="false" />
+        android:priority="$overlay_priority"
+        android:isStatic="$overlay_static" />
 </manifest>
 EOF
 

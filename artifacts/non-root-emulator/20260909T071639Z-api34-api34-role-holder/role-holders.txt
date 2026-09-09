@@ -1,0 +1,6 @@
+== role holders ==
+role=android.app.role.SYSTEM_CALL_STREAMING holders=[com.simrelay.m0 ]
+role=android.app.role.DIALER holders=[com.google.android.dialer ]
+role=android.app.role.CALL_REDIRECTION holders=[ ]
+role=android.app.role.CALL_SCREENING holders=[ ]
+role=android.app.role.NOT_A_REAL_ROLE_CONTROL holders=[ ]

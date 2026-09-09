@@ -94,8 +94,36 @@ if [[ "$adb_user" != "0" ]]; then
     exit 1
 fi
 
+wait_for_boot() {
+    "$provision_adb" -s "$provision_serial" wait-for-device
+    until [[ "$(adb_shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; do
+        sleep 3
+    done
+}
+
+ensure_writable_system() {
+    local attempt
+    for attempt in 1 2 3; do
+        "$provision_adb" -s "$provision_serial" root >/dev/null 2>&1 || true
+        wait_for_boot
+        "$provision_adb" -s "$provision_serial" remount >/dev/null 2>&1 || true
+        if adb_shell touch /system/.simrelay_write_test >/dev/null 2>&1; then
+            adb_shell rm -f /system/.simrelay_write_test >/dev/null 2>&1 || true
+            echo "system partition is writable (attempt $attempt)"
+            return 0
+        fi
+        echo "system not writable yet; rebooting so overlayfs takes effect (attempt $attempt)"
+        "$provision_adb" -s "$provision_serial" reboot
+        wait_for_boot
+    done
+    return 1
+}
+
 echo "== remounting system read-write =="
-"$provision_adb" -s "$provision_serial" remount
+if ! ensure_writable_system; then
+    echo "REFUSING: could not obtain a writable system partition on this image." >&2
+    exit 1
+fi
 
 echo "== installing application as a system app =="
 adb_shell mkdir -p "$provision_system_dir"

@@ -1,0 +1,8 @@
+{
+  "packageName": "com.simrelay.m0",
+  "installPath": "/data/app/~~8mTTMDicwYyBq0DUUFdf5A==/com.simrelay.m0--9QgNlwEhvX_8KRn8YbnAg==/base.apk",
+  "uid": 10192,
+  "versionName": "1.0",
+  "versionCode": 1,
+  "requestedPermissions": ["android.permission.CALL_AUDIO_INTERCEPTION", "android.permission.CAPTURE_AUDIO_OUTPUT", "android.permission.MODIFY_PHONE_STATE", "android.permission.READ_PHONE_STATE", "android.permission.RECORD_AUDIO", "com.simrelay.m0.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"]
+}
