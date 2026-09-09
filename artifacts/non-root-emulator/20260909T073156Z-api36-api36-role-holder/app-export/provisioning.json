@@ -1,0 +1,13 @@
+{
+  "apiLevel": 36,
+  "callAudioInterceptionGranted": true,
+  "roleName": "android.app.role.SYSTEM_CALL_STREAMING",
+  "roleAvailability": "Available",
+  "roleHeld": true,
+  "roleQueryFailure": null,
+  "systemApplication": true,
+  "qualificationComponentDeclared": true,
+  "route": "PermissionGranted",
+  "requiresSystemIntegration": false,
+  "summary": "CALL_AUDIO_INTERCEPTION is granted"
+}

@@ -1,0 +1,26 @@
+== package flags ==
+    flags=0x0
+    codePath=/system/app/SimRelayM0
+    versionCode=1 minSdk=24 targetSdk=36
+    apkSigningVersion=2
+    flags=[ SYSTEM DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+      android.permission.CALL_AUDIO_INTERCEPTION: granted=true, flags=[ GRANTED_BY_ROLE]
+        android.permission.READ_PHONE_STATE: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.RECORD_AUDIO: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|GRANTED_BY_ROLE]
+
+== requested and granted permissions ==
+android.permission.CALL_AUDIO_INTERCEPTION
+android.permission.CALL_AUDIO_INTERCEPTION: granted=true, flags=[ GRANTED_BY_ROLE]
+android.permission.CAPTURE_AUDIO_OUTPUT
+android.permission.MODIFY_PHONE_STATE
+android.permission.READ_PHONE_STATE
+android.permission.READ_PHONE_STATE: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+android.permission.RECORD_AUDIO
+android.permission.RECORD_AUDIO: granted=true, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|GRANTED_BY_ROLE]
+
+== platform declarations of the four tracked permissions ==
+android.permission.CALL_AUDIO_INTERCEPTION     uid=1000 gids=[] type=0 prot=signature|privileged|role
+android.permission.RECORD_AUDIO     uid=1000 gids=[] type=0 prot=dangerous|instant
+android.permission.CAPTURE_AUDIO_OUTPUT     uid=1000 gids=[] type=0 prot=signature|privileged|role
+android.permission.BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION (not declared on this build)

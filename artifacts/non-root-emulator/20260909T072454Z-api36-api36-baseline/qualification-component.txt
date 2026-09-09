@@ -1,0 +1,42 @@
+== call streaming qualification component visibility ==
+1 services found:
+  Service #0:
+    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=false
+    ServiceInfo:
+      name=com.google.android.gms.callstreaming.service.CallStreamingService
+      packageName=com.google.android.gms
+      enabled=true exported=true directBootAware=false
+      permission=android.permission.BIND_CALL_STREAMING_SERVICE
+      flags=0x0
+      ApplicationInfo:
+        name=co.g.App
+        packageName=com.google.android.gms
+        labelRes=0x7f15079b nonLocalizedLabel=null icon=0x7f08030e banner=0x0
+        className=co.g.App
+        processName=com.google.android.gms
+        taskAffinity=com.google.android.gms
+        uid=10145 flags=0xa0cabe45 privateFlags=0xa8089118 theme=0x0
+        requiresSmallestWidthDp=0 compatibleWidthLimitDp=0 largestWidthLimitDp=0
+        sourceDir=/product/priv-app/PrebuiltGmsCore/PrebuiltGmsCore.apk
+        resourceDirs=[/product/overlay/EmulationPixel6/EmulationPixel6Overlay.apk, /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk]
+        overlayPaths=[/product/overlay/EmulationPixel6/EmulationPixel6Overlay.apk, /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk]
+        seinfo=default:privapp:targetSdkVersion=36:partition=product
+        seinfoUser=:complete
+        dataDir=/data/user/0/com.google.android.gms
+        deviceProtectedDataDir=/data/user_de/0/com.google.android.gms
+        credentialProtectedDataDir=/data/user/0/com.google.android.gms
+        sharedLibraryFiles=[/system/framework/org.apache.http.legacy.jar, /system/framework/com.android.media.remotedisplay.jar, /system/framework/com.android.location.provider.jar, /system_ext/framework/androidx.window.extensions.jar, /system_ext/framework/androidx.window.sidecar.jar]
+        enabled=true minSdkVersion=35 targetSdkVersion=36 versionCode=252635038 targetSandboxVersion=1
+        manageSpaceActivityName=co.g.Space
+        supportsRtl=true
+        fullBackupContent=true
+        crossProfile=false
+        networkSecurityConfigRes=0x7f1900b8
+        HiddenApiEnforcementPolicy=2
+        usesNonSdkApi=false
+        allowsPlaybackCapture=true
+        nativeHeapZeroInitialized=0
+        enableOnBackInvokedCallback=true
+        allowCrossUidActivitySwitchFromBelow=true
+        mPageSizeAppCompatFlags=0
+        createTimestamp=86442

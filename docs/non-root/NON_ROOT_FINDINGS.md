@@ -217,6 +217,104 @@ Confidence values: `ConfirmedByAospSource`, `ConfirmedOnProductionDevice`, `Conf
 
 ---
 
+### NR-018 — The complete non-root chain works, proven end to end on API 34 and API 36
+
+- **Android/API:** 34 and 36
+- **Environment:** `SimRelay_API34` / `SimRelay_API36` AVDs, `google_apis` x86_64, `userdebug`/`dev-keys`, `-writable-system`
+- **Observation:** Each link verified independently, on both API levels:
+  `config_systemCallStreaming=com.simrelay.m0` → role qualification → `role holders = com.simrelay.m0` → `CALL_AUDIO_INTERCEPTION: granted=true, flags=[ GRANTED_BY_ROLE]`. `RECORD_AUDIO` likewise `GRANTED_BY_ROLE`. `CAPTURE_AUDIO_OUTPUT` remained **not granted**. The app was `flags=[ SYSTEM ... ]` with no `PRIVILEGED` private flag and no platform signature, so the grant is attributable to role membership alone — the platform's own `GRANTED_BY_ROLE` flag states this.
+- **Evidence:** `artifacts/non-root-emulator/*-api34-role-holder/`, `*-api36-role-holder/` (`package-state.txt`, `role-holders.txt`, `platform-config.txt`, `app-export/provisioning.json`)
+- **Confidence:** `ConfirmedOnEmulator`
+- **Impact on architecture:** The non-root provisioning model is real, not theoretical. Role-holder state alone was explicitly *not* treated as success; the `PackageManager` grant was verified separately.
+- **Potential main-branch change:** None. Validates the existing architecture unchanged.
+
+---
+
+### NR-019 — The platform states the grant mechanism out loud
+
+- **Android/API:** 34
+- **Environment:** emulator, ordinary APK in `/data/app`
+- **Observation:** `pm grant com.simrelay.m0 android.permission.CALL_AUDIO_INTERCEPTION` fails with
+  `java.lang.SecurityException: Permission android.permission.CALL_AUDIO_INTERCEPTION is managed by role`.
+- **Evidence:** shell transcript, API 34 baseline run
+- **Confidence:** `ConfirmedOnEmulator`
+- **Impact on architecture:** Runtime confirmation of NR-001/NR-003: from Android 14 the role is *the* grant path, and ADB cannot substitute. Also closes off any "just `pm grant` it" suggestion.
+- **Potential main-branch change:** None.
+
+---
+
+### NR-020 — The default holder is provisioned by a preinstalled **static** RRO, exactly as Google does it
+
+- **Android/API:** 34 and 36
+- **Environment:** emulator
+- **Observation:** On stock Google images, `config_systemCallStreaming` is **already populated** (`com.google.android.gms`) by `/product/overlay/GoogleConfigOverlay.apk` (`com.google.android.overlay.googleconfig`, `mPriority=7`, immutable, `STATE_ENABLED`), proven with `cmd overlay lookup --verbose`. Reproducing this required two corrections: the overlay must out-prioritise that one, and it must be **static** — a `isStatic="false"` overlay was registered but returned to `STATE_DISABLED` on every reboot, so the config reverted to GMS before role reconciliation ran. As `isStatic="true"` in `/product/overlay` it came up `STATE_ENABLED`, `mIsMutable=false`, priority 12, and persisted.
+- **Evidence:** `platform-config.txt` in both baseline and role-holder runs; `dumpsys overlay` transcripts; `tools/non-root/build_role_overlay.sh`
+- **Confidence:** `ConfirmedOnEmulator` for the mechanism; `ConfirmedOnEmulator` that Google itself uses a preinstalled RRO for this value
+- **Impact on architecture:** The RRO is only an emulator representation of OEM/system-image provisioning — **not** a retail deployment mechanism. Its value is showing that the required OEM action is small and conventional: one config string in a preinstalled overlay, which is already how the value is set on shipping Google builds.
+- **Potential main-branch change:** None to app code.
+
+---
+
+### NR-021 — On Android 16 GMS already holds the role, and the role is exclusive
+
+- **Android/API:** 34 vs 36 (behaviour differs)
+- **Environment:** emulator, stock images before provisioning
+- **Observation:** API 36 baseline: `SYSTEM_CALL_STREAMING holders = [com.google.android.gms]`, because GMS declares `com.google.android.gms.callstreaming.service.CallStreamingService` guarded by `BIND_CALL_STREAMING_SERVICE`. API 34 baseline: holders **empty**, because GMS is named in the config but declares no such service and therefore fails qualification. Our provisioning displaced GMS and made SimRelay the sole holder on API 36.
+- **Evidence:** `role-holders.txt` and `qualification-component.txt` for both baselines; `cmd package query-services -a android.telecom.CallStreamingService`
+- **Confidence:** `ConfirmedOnEmulator`
+- **Impact on architecture:** Product-critical. The role is `exclusive="true"`, so on a GMS Android 16 host SimRelay can only hold it by **displacing Google's call-streaming feature**. An OEM partner would have to accept that trade, and it cannot be done on a retail device at all. This is a stronger constraint than the API 34 picture suggested and should feed the product decision directly.
+- **Potential main-branch change:** None to code; belongs in the product/compatibility narrative.
+
+---
+
+### NR-022 — Real call downlink PCM captured with the unmodified backend, no root
+
+- **Android/API:** 34
+- **Environment:** emulator, role-provisioned system app, emulated GSM call answered (`mCallState=2`, `audioMode=2` = `MODE_IN_CALL`)
+- **Observation:** `FrameworkInterceptionBackend` — **unmodified** — reported `capability=Supported`, `isPstnCallAudioInterceptable()=true`, opened a downlink session at 48 kHz and delivered real audio: `sampleCount=3111212`, `durationMillis=64816`, `rms=11592.7`, `peakAbsolute=32734`, `isExactZero=false`. `rx.wav` is 6,222,468 bytes, exactly `3111212 × 2 + 44`. Teardown was clean (`session_released`). **Uplink injection failed**: `UnsupportedOperationException: Cannot create AudioTrack`, matching AudioManager's throw when the injection track cannot be built — the emulated audio HAL exposes no uplink injection device. Full duplex therefore failed at the uplink step, and the code correctly released the already-open downlink first.
+- **Evidence:** `artifacts/non-root-emulator/*-api34-role-holder/session-attempt/` (`metrics.json`, `session-events.txt`)
+- **Confidence:** `ConfirmedOnEmulator`
+- **Impact on architecture:** Classified per the agreed states: `PermissionProvisioningWorks` **and** `FrameworkApiAccessible` **and** downlink RX working, with uplink TX unavailable for want of emulated hardware. The uplink result is *not* a provisioning failure and says nothing about real handsets — proving uplink injection remains the rooted track's job on real hardware.
+- **Potential main-branch change:** None.
+
+---
+
+### NR-023 — Uplink HAL unavailability is misreported as `UnsupportedAudioFormat`
+
+- **Android/API:** 34
+- **Environment:** emulator, role-provisioned
+- **Observation:** When `getCallUplinkInjectionAudioTrack` throws `UnsupportedOperationException("Cannot create the AudioTrack")`, `CapabilityFailureMapper` classifies it as `UnsupportedAudioFormat`, so the diagnostic blames the requested PCM format when the real cause is that the platform cannot create an injection track at all. The candidate-rate ladder then retries every format pointlessly. The downlink equivalent mapped correctly (`IllegalStateException: not available in mode MODE_RINGTONE` → `CallNotActive`).
+- **Evidence:** `session-events.txt` (`state=UnsupportedAudioFormat ... message=Cannot create AudioTrack`)
+- **Confidence:** `ConfirmedOnEmulator`
+- **Impact on architecture:** A real generic defect, and exactly the class of problem `PHASE_0A_REVIEW.md` M7 warned about — exception class alone is too coarse. It would mislead device qualification on real handsets, attributing a missing HAL path to a format problem.
+- **Potential main-branch change:** **Recommended for `main`.** Distinguish "injection track could not be created" from "format rejected", e.g. a distinct state for track/record creation failure. Deliberately **not** changed on this branch: acceptance point 5 says the backend stays untouched absent a demonstrated generic defect, and this finding is the record of one. Codex owns the fix.
+
+---
+
+### NR-024 — `BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION` does not exist on either released build
+
+- **Android/API:** 34 and 36
+- **Environment:** emulator
+- **Observation:** The permission is **not declared** on the API 34 or the API 36 platform, though AOSP's audio policy references it behind `concurrent_audio_record_bypass_permission()`. It is evidently flag-gated and not present in these releases.
+- **Evidence:** `package-state.txt` "platform declarations of the four tracked permissions" in both runs
+- **Confidence:** `ConfirmedOnEmulator`
+- **Impact on architecture:** Part of NR-013's premise is moot on shipping builds: no app can hold a permission the platform does not define, so the concurrent-capture bypass cannot be a differentiator today.
+- **Potential main-branch change:** None.
+
+---
+
+### NR-025 — Emulator audio-mode behaviour differs between API 34 and API 36, capping what can be tested
+
+- **Android/API:** 34 vs 36
+- **Environment:** emulator, `emu gsm call` + `accept`
+- **Observation:** On API 34 an answered emulated call reached `MODE_IN_CALL` (`audioMode=2`), enabling a real session. On API 36 the same sequence leaves the audio mode at `MODE_RINGTONE` and then `NORMAL` while telephony reports `mCallState=2`, for at least 30 s; `cmd telecom answer-ringing-call` does not exist and `KEYCODE_HEADSETHOOK` had no effect. So no in-call session can be opened on the API 36 emulator.
+- **Evidence:** audio-mode polling transcript; `session_open_failed ... CallNotActive ... not available in mode MODE_RINGTONE`
+- **Confidence:** `ConfirmedOnEmulator`
+- **Impact on architecture:** **This is why NR-013 stays `ConfirmedByAospSource`.** The Android 16 in-call capture that would confirm the virtual-source exemption at runtime is unreachable on this emulator. API 34 supplies supporting runtime evidence (in-call capture succeeded holding only role-granted permissions, with `CAPTURE_AUDIO_OUTPUT` denied), but that is API 34, not 16. Closing NR-013 needs real Android 16 hardware.
+- **Potential main-branch change:** None.
+
+---
+
 ### NR-014 — Local environment cannot yet run emulator experiments
 
 - **Android/API:** n/a

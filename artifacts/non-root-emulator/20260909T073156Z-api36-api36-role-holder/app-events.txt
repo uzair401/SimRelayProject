@@ -1,0 +1,8 @@
+: event=call_state_changed elapsed_ns=227950928047 detail="from=Idle to=Ringing"
+: event=audio_mode_changed elapsed_ns=227953025888 detail="from=2 to=0"
+: event=call_state_changed elapsed_ns=230925962694 detail="from=Ringing to=OffHook"
+: event=audio_mode_changed elapsed_ns=230926896413 detail="from=0 to=1"
+: event=readiness_changed elapsed_ns=230928652600 detail="state=FrameworkValidationRequired callState=OffHook"
+: event=call_state_changed elapsed_ns=279867143521 detail="from=OffHook to=Idle"
+: event=audio_mode_changed elapsed_ns=279868850508 detail="from=1 to=2"
+: event=readiness_changed elapsed_ns=279869668348 detail="state=SessionNotReady callState=Idle"

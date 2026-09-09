@@ -1,0 +1,45 @@
+{
+  "permissions": [{
+  "name": "android.permission.CALL_AUDIO_INTERCEPTION",
+  "declared": true,
+  "granted": true,
+  "declarationState": "DeclaredAndGranted",
+  "protection": "SignatureOrPrivilegedOrRole",
+  "unavailableToNormalApp": false
+}, {
+  "name": "android.permission.CAPTURE_AUDIO_OUTPUT",
+  "declared": true,
+  "granted": false,
+  "declarationState": "DeclaredNotGranted",
+  "protection": "SignatureOrPrivilegedOrRole",
+  "unavailableToNormalApp": true
+}, {
+  "name": "android.permission.MODIFY_PHONE_STATE",
+  "declared": true,
+  "granted": false,
+  "declarationState": "DeclaredNotGranted",
+  "protection": "SignatureOrPrivilegedOrRole",
+  "unavailableToNormalApp": true
+}, {
+  "name": "android.permission.READ_PHONE_STATE",
+  "declared": true,
+  "granted": true,
+  "declarationState": "DeclaredAndGranted",
+  "protection": "Runtime",
+  "unavailableToNormalApp": false
+}, {
+  "name": "android.permission.RECORD_AUDIO",
+  "declared": true,
+  "granted": true,
+  "declarationState": "DeclaredAndGranted",
+  "protection": "Runtime",
+  "unavailableToNormalApp": false
+}, {
+  "name": "com.simrelay.m0.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+  "declared": true,
+  "granted": true,
+  "declarationState": "DeclaredAndGranted",
+  "protection": "SignatureOrPrivilegedOrRole",
+  "unavailableToNormalApp": false
+}]
+}

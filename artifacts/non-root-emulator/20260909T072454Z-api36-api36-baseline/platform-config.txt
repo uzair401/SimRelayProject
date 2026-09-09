@@ -1,0 +1,52 @@
+== effective platform value of config_systemCallStreaming ==
+com.google.android.gms
+
+== overlays targeting android ==
+android
+[x] android.auto_generated_rro_vendor__
+[x] com.google.android.overlay.googleconfig
+[x] com.google.android.overlay.googlewebview
+--- android.auto_generated_characteristics_rro
+[x] com.google.android.overlay.largescreenconfig
+[x] com.google.android.overlay.pixelconfigcommon
+[x] android.auto_generated_rro_product__
+[x] com.android.internal.ranchu.commonoverlay
+[ ] com.android.internal.display.cutout.emulation.corner
+[ ] com.android.internal.display.cutout.emulation.double
+[ ] com.android.internal.emulation.pixel_3a_xl
+[ ] com.android.internal.emulation.pixel_6_pro
+[ ] com.android.internal.emulation.pixel_7_pro
+[ ] com.android.internal.emulation.pixel_8_pro
+[ ] com.android.internal.emulation.pixel_9_pro
+[ ] com.android.internal.emulation.pixel_3a
+[ ] com.android.internal.emulation.pixel_4a
+[ ] com.android.internal.emulation.pixel_6a
+[ ] com.android.internal.emulation.pixel_7a
+[ ] com.android.internal.emulation.pixel_8a
+[ ] com.android.internal.emulation.pixel_9a
+[ ] com.android.internal.display.cutout.emulation.hole
+[ ] com.android.internal.display.cutout.emulation.tall
+[ ] com.android.internal.systemui.navbar.threebutton
+[ ] com.android.internal.systemui.navbar.twobutton
+[ ] com.android.internal.emulation.pixel_9_pro_fold
+[ ] com.android.internal.emulation.pixel_3
+[ ] com.android.internal.emulation.pixel_4
+[ ] com.android.internal.emulation.pixel_5
+[x] com.android.internal.emulation.pixel_6
+[ ] com.android.internal.emulation.pixel_7
+[ ] com.android.internal.emulation.pixel_8
+[ ] com.android.internal.emulation.pixel_9
+[ ] com.android.internal.display.cutout.emulation.emu01
+[ ] com.android.theme.font.notoserifsource
+[ ] com.android.internal.display.cutout.emulation.waterfall
+[ ] com.android.internal.systemui.navbar.transparent
+[ ] com.android.role.notes.enabled
+[ ] com.android.internal.emulation.pixel_9_pro_xl
+[ ] com.android.internal.emulation.pixel_2_xl
+[ ] com.android.internal.emulation.pixel_3_xl
+[ ] com.android.internal.emulation.pixel_4_xl
+[ ] com.android.internal.emulation.pixel_fold
+[x] com.android.internal.systemui.navbar.gestural
+[ ] com.android.systemui:neutral
+[ ] com.android.systemui:accent
+[ ] com.android.systemui:dynamic

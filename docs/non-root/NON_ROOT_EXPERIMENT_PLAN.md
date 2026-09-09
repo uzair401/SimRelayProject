@@ -30,6 +30,24 @@ Agreed before running them, so results cannot be graded generously after the fac
 
 ---
 
+## Results as of 2026-09-09
+
+| # | Experiment | API 34 | API 36 |
+|---|---|---|---|
+| 1 | Ordinary APK baseline | **Complete** — `PermissionMissing`; `pm grant` refused: "managed by role"; route `RoleAvailableSystemAppRequired` | not repeated (covered by API 34) |
+| 2 | Role discovery | **Complete** — `isRoleAvailable=true`; `prot=signature\|privileged\|role`; `config_systemCallStreaming=com.google.android.gms` via `GoogleConfigOverlay.apk`; holders empty | **Complete** — same declaration; **holders already `[com.google.android.gms]`** (NR-021) |
+| 3 | Role qualification | **Complete** — single exported `<service>` is sufficient and visible to `query-services` | **Complete** |
+| 4 | Configured system role holder | **Complete** — static RRO + `/system/app` → `role holders = com.simrelay.m0` | **Complete** — also **displaced GMS** |
+| 5 | Permission grant verification | **Complete** — `CALL_AUDIO_INTERCEPTION granted=true flags=[GRANTED_BY_ROLE]`, `RECORD_AUDIO` likewise, `CAPTURE_AUDIO_OUTPUT` denied, app not privileged/not platform-signed | **Complete** — identical |
+| 6 | Unmodified backend probe | **Complete** — `capability=Supported`, `isPstnCallAudioInterceptable=true`, **65 s of real downlink PCM captured**; uplink TX unavailable (emulated HAL) | **Complete** for probe; in-call session unreachable (NR-025) |
+| — | NR-013 runtime check | supporting evidence only (API 34) | **Not obtainable** — emulator never enters `MODE_IN_CALL` (NR-025) |
+
+Result states per the acceptance criteria: `PermissionProvisioningWorks` ✅ (both API levels), `FrameworkApiAccessible` ✅ (both), `PstnHardwareUnavailable` — applies to **uplink injection only** on API 34, and to any in-call session on API 36. No separate non-root backend was created; `FrameworkInterceptionBackend` ran unmodified throughout.
+
+Environment used: `SimRelay_API34` and `SimRelay_API36` AVDs, `google_apis` x86_64, pixel_6 profile, `userdebug`/`dev-keys`, booted `-writable-system` for provisioning only.
+
+---
+
 ## 0. Environment status and authorisations needed
 
 Inspected read-only on 2026-09-08:

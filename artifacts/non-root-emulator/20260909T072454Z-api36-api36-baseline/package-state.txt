@@ -1,0 +1,11 @@
+== package flags ==
+(package not installed or no matching fields)
+
+== requested and granted permissions ==
+(package not installed)
+
+== platform declarations of the four tracked permissions ==
+android.permission.CALL_AUDIO_INTERCEPTION     uid=1000 gids=[] type=0 prot=signature|privileged|role
+android.permission.RECORD_AUDIO     uid=1000 gids=[] type=0 prot=dangerous|instant
+android.permission.CAPTURE_AUDIO_OUTPUT     uid=1000 gids=[] type=0 prot=signature|privileged|role
+android.permission.BYPASS_CONCURRENT_RECORD_AUDIO_RESTRICTION (not declared on this build)

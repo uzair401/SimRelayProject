@@ -1,0 +1,222 @@
+{
+  "runId": "20260909-072901-909-1168c495-6eb8-4ec5-bbb2-23393fc1e3b0",
+  "capturedAtEpochMillis": 1788938941909,
+  "selectedBackend": "framework_interception",
+  "readiness": {
+  "state": "SessionNotReady",
+  "message": "No active call is currently observed",
+  "audioMode": 2
+},
+  "callState": "Idle",
+  "provisioning": {
+  "apiLevel": 36,
+  "callAudioInterceptionGranted": true,
+  "roleName": "android.app.role.SYSTEM_CALL_STREAMING",
+  "roleAvailability": "Available",
+  "roleHeld": true,
+  "roleQueryFailure": null,
+  "systemApplication": true,
+  "qualificationComponentDeclared": true,
+  "route": "PermissionGranted",
+  "requiresSystemIntegration": false,
+  "summary": "CALL_AUDIO_INTERCEPTION is granted"
+},
+  "backends": [{
+  "backend": "framework_interception",
+  "state": "Supported",
+  "message": "Framework PSTN interception is available",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": true,
+  "apiPresence": {
+  "interceptability": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "legacy_privileged",
+  "state": "NotImplemented",
+  "message": "Legacy privileged backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "vendor_audio",
+  "state": "NotImplemented",
+  "message": "Vendor audio backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}],
+  "events": [{
+  "elapsedRealtimeNanos": 105542109799,
+  "name": "probe_started",
+  "detail": "callState=Unknown audioMode=1"
+}, {
+  "elapsedRealtimeNanos": 105722822806,
+  "name": "call_state_changed",
+  "detail": "from=Unknown to=OffHook"
+}, {
+  "elapsedRealtimeNanos": 106988979265,
+  "name": "backend_selected",
+  "detail": "backend=framework_interception"
+}, {
+  "elapsedRealtimeNanos": 106997460244,
+  "name": "framework_api_state",
+  "detail": "interceptability=Accessible downlink=Accessible uplink=Accessible"
+}, {
+  "elapsedRealtimeNanos": 106999244327,
+  "name": "pstn_interceptable",
+  "detail": "value=true"
+}, {
+  "elapsedRealtimeNanos": 107004483231,
+  "name": "capability_changed",
+  "detail": "backend=framework_interception state=Supported"
+}, {
+  "elapsedRealtimeNanos": 107005027809,
+  "name": "readiness_changed",
+  "detail": "state=FrameworkValidationRequired callState=OffHook audioMode=1"
+}, {
+  "elapsedRealtimeNanos": 107005917973,
+  "name": "permission_state",
+  "detail": "name=android.permission.CALL_AUDIO_INTERCEPTION declared=true granted=true protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 107016658939,
+  "name": "permission_state",
+  "detail": "name=android.permission.CAPTURE_AUDIO_OUTPUT declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 107021291741,
+  "name": "permission_state",
+  "detail": "name=android.permission.MODIFY_PHONE_STATE declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 107024190027,
+  "name": "permission_state",
+  "detail": "name=android.permission.READ_PHONE_STATE declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 107030194013,
+  "name": "permission_state",
+  "detail": "name=android.permission.RECORD_AUDIO declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 107033709450,
+  "name": "permission_state",
+  "detail": "name=com.simrelay.m0.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION declared=true granted=true protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 107035865427,
+  "name": "provisioning_route",
+  "detail": "route=PermissionGranted roleAvailability=Available roleHeld=true systemApp=true api=36"
+}, {
+  "elapsedRealtimeNanos": 107037975241,
+  "name": "probe_completed",
+  "detail": "backend=framework_interception capability=Supported readiness=FrameworkValidationRequired"
+}, {
+  "elapsedRealtimeNanos": 162875122404,
+  "name": "capture_start_requested",
+  "detail": "audioMode=1"
+}, {
+  "elapsedRealtimeNanos": 162878451389,
+  "name": "artifact_created",
+  "detail": "attempt=downlink-<redacted-identifier>-1-105398b7-1684-4ed4-b385-ade15ecc6d75 path=/data/user/0/com.simrelay.m0/files/diagnostics/20260909-072901-909-1168c495-6eb8-4ec5-bbb2-23393fc1e3b0/attempts/downlink-<redacted-identifier>-1-105398b7-16"
+}, {
+  "elapsedRealtimeNanos": 162879078189,
+  "name": "session_open_started",
+  "detail": "direction=downlink attempt=downlink-<redacted-identifier>-1-105398b7-1684-4ed4-b385-ade15ecc6d75"
+}, {
+  "elapsedRealtimeNanos": 162881933993,
+  "name": "session_open_failed",
+  "detail": "direction=downlink state=CallNotActive operation=OpenDownlink"
+}, {
+  "elapsedRealtimeNanos": 162882351283,
+  "name": "failure",
+  "detail": "operation=OpenDownlink state=CallNotActive exception=java.lang.IllegalStateException message=not available in mode MODE_RINGTONE"
+}, {
+  "elapsedRealtimeNanos": 224881544520,
+  "name": "call_state_changed",
+  "detail": "from=OffHook to=Idle"
+}, {
+  "elapsedRealtimeNanos": 224882244947,
+  "name": "audio_mode_changed",
+  "detail": "from=1 to=2"
+}, {
+  "elapsedRealtimeNanos": 224883167864,
+  "name": "readiness_changed",
+  "detail": "state=SessionNotReady callState=Idle"
+}, {
+  "elapsedRealtimeNanos": 227950928047,
+  "name": "call_state_changed",
+  "detail": "from=Idle to=Ringing"
+}, {
+  "elapsedRealtimeNanos": 227953025888,
+  "name": "audio_mode_changed",
+  "detail": "from=2 to=0"
+}, {
+  "elapsedRealtimeNanos": 230925962694,
+  "name": "call_state_changed",
+  "detail": "from=Ringing to=OffHook"
+}, {
+  "elapsedRealtimeNanos": 230926896413,
+  "name": "audio_mode_changed",
+  "detail": "from=0 to=1"
+}, {
+  "elapsedRealtimeNanos": 230928652600,
+  "name": "readiness_changed",
+  "detail": "state=FrameworkValidationRequired callState=OffHook"
+}, {
+  "elapsedRealtimeNanos": 279867143521,
+  "name": "call_state_changed",
+  "detail": "from=OffHook to=Idle"
+}, {
+  "elapsedRealtimeNanos": 279868850508,
+  "name": "audio_mode_changed",
+  "detail": "from=1 to=2"
+}, {
+  "elapsedRealtimeNanos": 279869668348,
+  "name": "readiness_changed",
+  "detail": "state=SessionNotReady callState=Idle"
+}]
+}
