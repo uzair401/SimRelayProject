@@ -1,0 +1,9 @@
+{
+  "sampleCount": 3111212,
+  "sampleRateHz": 48000,
+  "durationMillis": 64816,
+  "rms": 11592.716347996173,
+  "peakAbsolute": 32734,
+  "isExactZero": false,
+  "isBelowSilenceThreshold": false
+}

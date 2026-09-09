@@ -1,0 +1,226 @@
+{
+  "runId": "20260909-071821-257-f892c68b-adcf-4972-9aa4-c263386034de",
+  "capturedAtEpochMillis": 1788938301257,
+  "selectedBackend": "framework_interception",
+  "readiness": {
+  "state": "FrameworkValidationRequired",
+  "message": "Framework will validate whether the current call-redirection mode permits opening audio",
+  "audioMode": 2
+},
+  "callState": "OffHook",
+  "provisioning": {
+  "apiLevel": 34,
+  "callAudioInterceptionGranted": true,
+  "roleName": "android.app.role.SYSTEM_CALL_STREAMING",
+  "roleAvailability": "Available",
+  "roleHeld": true,
+  "roleQueryFailure": null,
+  "systemApplication": true,
+  "qualificationComponentDeclared": true,
+  "route": "PermissionGranted",
+  "requiresSystemIntegration": false,
+  "summary": "CALL_AUDIO_INTERCEPTION is granted"
+},
+  "backends": [{
+  "backend": "framework_interception",
+  "state": "Supported",
+  "message": "Framework PSTN interception is available",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": true,
+  "apiPresence": {
+  "interceptability": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "Accessible",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "legacy_privileged",
+  "state": "NotImplemented",
+  "message": "Legacy privileged backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}, {
+  "backend": "vendor_audio",
+  "state": "NotImplemented",
+  "message": "Vendor audio backend is not implemented in Phase 0A",
+  "exceptionClass": null,
+  "operation": "CapabilityProbe",
+  "pstnInterceptable": null,
+  "apiPresence": {
+  "interceptability": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "downlinkExtraction": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+},
+  "uplinkInjection": {
+  "access": "NotChecked",
+  "exceptionClass": null,
+  "message": null
+}
+}
+}],
+  "events": [{
+  "elapsedRealtimeNanos": 254654630137,
+  "name": "probe_started",
+  "detail": "callState=Unknown audioMode=2"
+}, {
+  "elapsedRealtimeNanos": 254662767855,
+  "name": "call_state_changed",
+  "detail": "from=Unknown to=OffHook"
+}, {
+  "elapsedRealtimeNanos": 255300665468,
+  "name": "backend_selected",
+  "detail": "backend=framework_interception"
+}, {
+  "elapsedRealtimeNanos": 255302063306,
+  "name": "framework_api_state",
+  "detail": "interceptability=Accessible downlink=Accessible uplink=Accessible"
+}, {
+  "elapsedRealtimeNanos": 255303311790,
+  "name": "pstn_interceptable",
+  "detail": "value=true"
+}, {
+  "elapsedRealtimeNanos": 255304457615,
+  "name": "capability_changed",
+  "detail": "backend=framework_interception state=Supported"
+}, {
+  "elapsedRealtimeNanos": 255305680536,
+  "name": "readiness_changed",
+  "detail": "state=FrameworkValidationRequired callState=OffHook audioMode=2"
+}, {
+  "elapsedRealtimeNanos": 255307091567,
+  "name": "permission_state",
+  "detail": "name=android.permission.CALL_AUDIO_INTERCEPTION declared=true granted=true protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 255308626845,
+  "name": "permission_state",
+  "detail": "name=android.permission.CAPTURE_AUDIO_OUTPUT declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 255310059516,
+  "name": "permission_state",
+  "detail": "name=android.permission.MODIFY_PHONE_STATE declared=true granted=false protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 255311506194,
+  "name": "permission_state",
+  "detail": "name=android.permission.READ_PHONE_STATE declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 255312833477,
+  "name": "permission_state",
+  "detail": "name=android.permission.RECORD_AUDIO declared=true granted=true protection=Runtime"
+}, {
+  "elapsedRealtimeNanos": 255440105374,
+  "name": "permission_state",
+  "detail": "name=com.simrelay.m0.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION declared=true granted=true protection=SignatureOrPrivilegedOrRole"
+}, {
+  "elapsedRealtimeNanos": 255447880823,
+  "name": "provisioning_route",
+  "detail": "route=PermissionGranted roleAvailability=Available roleHeld=true systemApp=true api=34"
+}, {
+  "elapsedRealtimeNanos": 255449203624,
+  "name": "probe_completed",
+  "detail": "backend=framework_interception capability=Supported readiness=FrameworkValidationRequired"
+}, {
+  "elapsedRealtimeNanos": 376873512873,
+  "name": "capture_start_requested",
+  "detail": "audioMode=2"
+}, {
+  "elapsedRealtimeNanos": 376881241774,
+  "name": "artifact_created",
+  "detail": "attempt=downlink-<redacted-identifier>-1-a6c048f5-4a4b-4f1c-a27c-8073327f9d29 path=/data/user/0/com.simrelay.m0/files/diagnostics/20260909-071821-257-f892c68b-adcf-4972-9aa4-c263386034de/attempts/downlink-<redacted-identifier>-1-a6c048f5-4a"
+}, {
+  "elapsedRealtimeNanos": 376883986581,
+  "name": "session_open_started",
+  "detail": "direction=downlink attempt=downlink-<redacted-identifier>-1-a6c048f5-4a4b-4f1c-a27c-8073327f9d29"
+}, {
+  "elapsedRealtimeNanos": 376917166987,
+  "name": "downlink_session_created",
+  "detail": "attempt=downlink-<redacted-identifier>-1-a6c048f5-4a4b-4f1c-a27c-8073327f9d29"
+}, {
+  "elapsedRealtimeNanos": 376949207986,
+  "name": "capture_started",
+  "detail": "attempt=downlink-<redacted-identifier>-1-a6c048f5-4a4b-4f1c-a27c-8073327f9d29"
+}, {
+  "elapsedRealtimeNanos": 376976166662,
+  "name": "first_rx",
+  "detail": "attempt=downlink-<redacted-identifier>-1-a6c048f5-4a4b-4f1c-a27c-8073327f9d29"
+}, {
+  "elapsedRealtimeNanos": 441911647496,
+  "name": "stop_requested",
+  "detail": "direction=downlink"
+}, {
+  "elapsedRealtimeNanos": 441965012585,
+  "name": "session_released",
+  "detail": "direction=downlink sampleRate=48000"
+}, {
+  "elapsedRealtimeNanos": 442050557492,
+  "name": "capture_artifact_completed",
+  "detail": "/data/user/0/com.simrelay.m0/files/diagnostics/20260909-071821-257-f892c68b-adcf-4972-9aa4-c263386034de/attempts/downlink-<redacted-identifier>-1-a6c048f5-4a4b-4f1c-a27c-8073327f9d29/rx.wav"
+}, {
+  "elapsedRealtimeNanos": 442575473050,
+  "name": "session_released",
+  "detail": "direction=downlink sampleRate=48000"
+}, {
+  "elapsedRealtimeNanos": 455283683688,
+  "name": "full_duplex_start_requested",
+  "detail": "audioMode=2"
+}, {
+  "elapsedRealtimeNanos": 455290926851,
+  "name": "artifact_created",
+  "detail": "attempt=full-duplex-<redacted-identifier>-2-f351f9c7-a91e-4729-be93-f7d1d60e4e2f path=/data/user/0/com.simrelay.m0/files/diagnostics/20260909-071821-257-f892c68b-adcf-4972-9aa4-c263386034de/attempts/full-duplex-<redacted-identifier>-2-f351f"
+}, {
+  "elapsedRealtimeNanos": 455293349622,
+  "name": "session_open_started",
+  "detail": "direction=downlink mode=full_duplex attempt=full-duplex-<redacted-identifier>-2-f351f9c7-a91e-4729-be93-f7d1d60e4e2f"
+}, {
+  "elapsedRealtimeNanos": 455330200132,
+  "name": "session_open_started",
+  "detail": "direction=uplink mode=full_duplex attempt=full-duplex-<redacted-identifier>-2-f351f9c7-a91e-4729-be93-f7d1d60e4e2f"
+}, {
+  "elapsedRealtimeNanos": 455461190275,
+  "name": "session_released",
+  "detail": "direction=downlink sampleRate=48000"
+}, {
+  "elapsedRealtimeNanos": 455504356127,
+  "name": "session_open_failed",
+  "detail": "direction=uplink state=UnsupportedAudioFormat operation=OpenUplink"
+}, {
+  "elapsedRealtimeNanos": 455549920424,
+  "name": "failure",
+  "detail": "operation=OpenUplink state=UnsupportedAudioFormat exception=java.lang.UnsupportedOperationException message=Cannot create AudioTrack"
+}]
+}

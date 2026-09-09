@@ -1,0 +1,7 @@
+: event=full_duplex_start_requested elapsed_ns=455283683688 detail="audioMode=2"
+: event=artifact_created elapsed_ns=455290926851 detail="attempt=full-duplex-<redacted-identifier>-2-f351f9c7-a91e-4729-be93-f7d1d60e4e2f path=/data/user/0/com.simrelay.m0/files/diagnostics/20260909-071821-257-f892c68b-adcf-4972-9aa4-c263386034de/attempts/full-duplex-<redacted-identifier>-2-f351f"
+: event=session_open_started elapsed_ns=455293349622 detail="direction=downlink mode=full_duplex attempt=full-duplex-<redacted-identifier>-2-f351f9c7-a91e-4729-be93-f7d1d60e4e2f"
+: event=session_open_started elapsed_ns=455330200132 detail="direction=uplink mode=full_duplex attempt=full-duplex-<redacted-identifier>-2-f351f9c7-a91e-4729-be93-f7d1d60e4e2f"
+: event=session_released elapsed_ns=455461190275 detail="direction=downlink sampleRate=48000"
+: event=session_open_failed elapsed_ns=455504356127 detail="direction=uplink state=UnsupportedAudioFormat operation=OpenUplink"
+: event=failure elapsed_ns=455549920424 detail="operation=OpenUplink state=UnsupportedAudioFormat exception=java.lang.UnsupportedOperationException message=Cannot create AudioTrack"
