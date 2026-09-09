@@ -24,3 +24,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "SimRelayM0"
 include(":app")
+include(":prototype-core")
+include(":prototype-media-android")
+include(":client-android")

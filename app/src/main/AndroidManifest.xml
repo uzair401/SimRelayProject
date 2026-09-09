@@ -4,6 +4,8 @@
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission
         android:name="android.permission.CALL_AUDIO_INTERCEPTION"
         tools:ignore="ProtectedPermissions" />
@@ -26,7 +28,11 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SimRelayM0">
+        android:theme="@style/Theme.SimRelayM0"
+        android:usesCleartextTraffic="true">
+        <activity
+            android:name=".prototype.PrototypeHostActivity"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

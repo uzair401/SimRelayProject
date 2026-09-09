@@ -1,6 +1,7 @@
 package com.simrelay.m0
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -35,6 +36,7 @@ import com.simrelay.m0.audio.AudioAction
 import com.simrelay.m0.audio.SessionState
 import com.simrelay.m0.presentation.M0UiState
 import com.simrelay.m0.presentation.M0ViewModel
+import com.simrelay.m0.prototype.PrototypeHostActivity
 import com.simrelay.m0.ui.theme.SimRelayM0Theme
 
 class MainActivity : ComponentActivity() {
@@ -109,6 +111,9 @@ private fun M0App(viewModel: M0ViewModel, runProbeOnLaunch: Boolean) {
             },
             onStopAll = viewModel::stopAll,
             onExport = viewModel::exportDiagnostics,
+            onOpenPrototype = {
+                context.startActivity(Intent(context, PrototypeHostActivity::class.java))
+            },
             modifier = Modifier.padding(padding)
         )
     }
@@ -127,6 +132,7 @@ private fun DiagnosticScreen(
     onStartFullDuplex: () -> Unit,
     onStopAll: () -> Unit,
     onExport: () -> Unit,
+    onOpenPrototype: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val details = listOf(
@@ -189,6 +195,9 @@ private fun DiagnosticScreen(
         }
         item {
             ActionButton("Export Diagnostics", state.outputPath != null, onExport)
+        }
+        item {
+            ActionButton("Open E2E Prototype", true, onOpenPrototype)
         }
     }
 }

@@ -16,6 +16,10 @@ keystore.properties
 # Kotlin
 .kotlin/
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Android generated files
 captures/
 .externalNativeBuild/
