@@ -22,7 +22,7 @@ CallAudioBackend
 FrameworkInterceptionBackend
 ```
 
-No signaling, protocol, pairing, backend, media transport, Android CLIENT, or coordinator API changes are intended.
+No signaling, protocol, pairing, media transport, Android CLIENT, or coordinator API changes are intended.
 
 ## Required audio contract
 
@@ -58,11 +58,13 @@ The real implementation must preserve session identity and report incoming, ring
 4. Select `FrameworkInterceptionBackend` through `PrototypeHostConfiguration`; do not change coordinator or transport code.
 5. Start with observed real PSTN call state and verify `isPstnCallAudioInterceptable()` during the controlled call.
 6. Run downlink, uplink, and full-duplex tests independently before using the end-to-end CLIENT path.
-7. Connect the existing signaling and WebRTC Opus/RTP path after local framework RX/TX succeeds.
+7. Enable the HOST's native Internet-sharing hotspot, join the CLIENT, and connect the default local direct signaling and WebRTC Opus/RTP path after framework RX/TX succeeds. The FastAPI signaling harness and external Internet are optional and not required for production operation.
 8. Select `AndroidPstnCallControlBackend` only when its reported permissions/role capabilities are genuinely available.
 9. Preserve the existing fallback order: framework, legacy privileged, vendor, unsupported.
 
 Root, Magisk, shell, manufacturer, chipset, and provisioning behavior remain external to generic orchestration.
+
+SimRelay does not control tethering or implement Internet routing. Android's native hotspot stack may share HOST mobile data with the CLIENT independently of local SimRelay signaling and media.
 
 ## Real-device acceptance
 

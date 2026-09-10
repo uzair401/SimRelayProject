@@ -10,16 +10,22 @@ import androidx.lifecycle.AndroidViewModel
 import com.simrelay.prototype.call.PrototypeCallState
 import com.simrelay.prototype.media.AudioFormatAdapter
 import com.simrelay.prototype.media.android.WebRtcAudioMediaTransport
+import com.simrelay.prototype.pairing.DirectPairingPayloadCodec
 import com.simrelay.prototype.protocol.SignalMessage
 import com.simrelay.prototype.protocol.SignalMessageType
 import com.simrelay.prototype.transport.ConnectionState
+import com.simrelay.prototype.transport.DevelopmentBackendSignalingTransport
+import com.simrelay.prototype.transport.DirectPeerConfiguration
+import com.simrelay.prototype.transport.DirectPeerSignalingTransport
 import com.simrelay.prototype.transport.MediaTransport
-import com.simrelay.prototype.transport.OkHttpSignalingTransport
+import com.simrelay.prototype.transport.PrototypeSignalingMode
 import com.simrelay.prototype.transport.SignalingTransport
 import java.util.UUID
 
 data class ClientUiState(
+    val signalingMode: PrototypeSignalingMode = PrototypeSignalingMode.DirectPeer,
     val serverUrl: String = "ws://10.0.2.2:8000/ws",
+    val directPairingPayload: String = "",
     val pairingCode: String = "",
     val signalingState: ConnectionState = ConnectionState.Disconnected,
     val paired: Boolean = false,
@@ -41,6 +47,7 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
     val uiState: State<ClientUiState> = _uiState
     private var signaling: SignalingTransport? = null
     private var media: MediaTransport? = null
+    private var pendingDirectPairingToken: String? = null
     private var firstRx = false
     private var firstTx = false
 
@@ -48,11 +55,25 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
 
     fun setPairingCode(value: String) = update { it.copy(pairingCode = value.filter(Char::isDigit).take(9)) }
 
+    fun setDirectPairingPayload(value: String) = update { it.copy(directPairingPayload = value.trim().take(512)) }
+
+    fun setSignalingMode(value: PrototypeSignalingMode) {
+        if (uiState.value.signalingState == ConnectionState.Disconnected) {
+            update { it.copy(signalingMode = value, lastError = null) }
+        }
+    }
+
     fun connect() {
         disconnect()
-        val transport = OkHttpSignalingTransport(uiState.value.serverUrl)
+        val setup = createSignaling().getOrElse { throwable ->
+            update { it.copy(lastError = throwable.message ?: "Invalid signaling configuration") }
+            return
+        }
+        val transport = setup.transport
+        pendingDirectPairingToken = setup.directPairingToken
         val mediaTransport = runCatching { WebRtcAudioMediaTransport(getApplication(), transport) }
             .getOrElse { throwable ->
+                pendingDirectPairingToken = null
                 transport.close()
                 update { it.copy(lastError = "CLIENT media setup failed: ${throwable.javaClass.simpleName}") }
                 return
@@ -73,6 +94,14 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
                         payload = mapOf("client_id" to clientId)
                     )
                 )
+                pendingDirectPairingToken?.let { token ->
+                    transport.send(
+                        SignalMessage(
+                            messageType = SignalMessageType.PairRequest,
+                            payload = mapOf("pairing_code" to token)
+                        )
+                    )
+                }
             }
             if (state == ConnectionState.Disconnected || state == ConnectionState.Failed) {
                 audio.stop()
@@ -140,6 +169,7 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         signaling?.close()
         media = null
         signaling = null
+        pendingDirectPairingToken = null
         update {
             it.copy(
                 signalingState = ConnectionState.Disconnected,
@@ -264,4 +294,26 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
         val detail = fields.entries.joinToString(" ") { "${it.key}=${it.value}" }
         Log.i("SimRelayPrototype", "event=$event${if (detail.isEmpty()) "" else " $detail"}")
     }
+
+    private fun createSignaling(): Result<ClientSignalingSetup> = runCatching {
+        when (uiState.value.signalingMode) {
+            PrototypeSignalingMode.DirectPeer -> {
+                val payload = DirectPairingPayloadCodec.decode(uiState.value.directPairingPayload).getOrThrow()
+                require(payload.expiresAtMillis > System.currentTimeMillis()) { "Direct pairing payload is expired" }
+                ClientSignalingSetup(
+                    DirectPeerSignalingTransport(DirectPeerConfiguration.Client(payload)),
+                    payload.pairingToken
+                )
+            }
+            PrototypeSignalingMode.DevelopmentBackend -> ClientSignalingSetup(
+                DevelopmentBackendSignalingTransport(uiState.value.serverUrl),
+                null
+            )
+        }
+    }
 }
+
+private data class ClientSignalingSetup(
+    val transport: SignalingTransport,
+    val directPairingToken: String?
+)

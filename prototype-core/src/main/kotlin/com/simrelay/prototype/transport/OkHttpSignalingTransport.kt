@@ -10,7 +10,7 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.util.concurrent.atomic.AtomicReference
 
-class OkHttpSignalingTransport(
+class DevelopmentBackendSignalingTransport(
     private val serverUrl: String,
     private val client: OkHttpClient = OkHttpClient()
 ) : SignalingTransport {

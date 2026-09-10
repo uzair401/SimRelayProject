@@ -122,6 +122,14 @@ class BackendLogicTest {
             ).state
         )
         assertEquals(
+            CapabilityState.AudioRouteUnavailable,
+            CapabilityFailureMapper.fromThrowable(
+                backendId,
+                UnsupportedOperationException("Cannot create AudioTrack"),
+                operation = AudioOperation.OpenUplink
+            ).state
+        )
+        assertEquals(
             CapabilityState.ArtifactFailure,
             CapabilityFailureMapper.fromThrowable(
                 backendId,

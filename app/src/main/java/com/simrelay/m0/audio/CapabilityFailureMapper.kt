@@ -26,8 +26,6 @@ object CapabilityFailureMapper {
             throwable is UnsupportedOperationException -> {
                 if (throwable.message.orEmpty().contains("PSTN", ignoreCase = true)) {
                     CapabilityState.PstnInterceptionUnsupported
-                } else if (operation in setOf(AudioOperation.OpenDownlink, AudioOperation.OpenUplink)) {
-                    CapabilityState.UnsupportedAudioFormat
                 } else {
                     CapabilityState.AudioRouteUnavailable
                 }

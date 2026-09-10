@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.simrelay.prototype.call.PrototypeCallState
 import com.simrelay.prototype.transport.ConnectionState
+import com.simrelay.prototype.transport.PrototypeSignalingMode
 
 class ClientActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,30 +60,55 @@ private fun ClientScreen(viewModel: ClientViewModel) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text("SimRelay Android Client", style = MaterialTheme.typography.headlineSmall)
-        OutlinedTextField(
-            value = state.serverUrl,
-            onValueChange = viewModel::setServerUrl,
-            label = { Text("Signaling WebSocket URL") },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = state.signalingState == ConnectionState.Disconnected
-        )
+        Text("Signaling mode: ${state.signalingMode}")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = { viewModel.setSignalingMode(PrototypeSignalingMode.DirectPeer) },
+                enabled = state.signalingState == ConnectionState.Disconnected,
+                modifier = Modifier.weight(1f)
+            ) { Text("HOST hotspot / LAN") }
+            Button(
+                onClick = { viewModel.setSignalingMode(PrototypeSignalingMode.DevelopmentBackend) },
+                enabled = state.signalingState == ConnectionState.Disconnected,
+                modifier = Modifier.weight(1f)
+            ) { Text("Dev backend") }
+        }
+        if (state.signalingMode == PrototypeSignalingMode.DirectPeer) {
+            OutlinedTextField(
+                value = state.directPairingPayload,
+                onValueChange = viewModel::setDirectPairingPayload,
+                label = { Text("Direct pairing payload") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.signalingState == ConnectionState.Disconnected
+            )
+        } else {
+            OutlinedTextField(
+                value = state.serverUrl,
+                onValueChange = viewModel::setServerUrl,
+                label = { Text("Development signaling WebSocket URL") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.signalingState == ConnectionState.Disconnected
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = viewModel::connect, modifier = Modifier.weight(1f)) { Text("Connect") }
             Button(onClick = viewModel::disconnect, modifier = Modifier.weight(1f)) { Text("Disconnect") }
         }
-        OutlinedTextField(
-            value = state.pairingCode,
-            onValueChange = viewModel::setPairingCode,
-            label = { Text("Pairing code") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
-            enabled = state.signalingState == ConnectionState.Connected && !state.paired
-        )
-        Button(
-            onClick = viewModel::pair,
-            enabled = state.signalingState == ConnectionState.Connected && !state.paired,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Pair with HOST") }
+        if (state.signalingMode == PrototypeSignalingMode.DevelopmentBackend) {
+            OutlinedTextField(
+                value = state.pairingCode,
+                onValueChange = viewModel::setPairingCode,
+                label = { Text("Pairing code") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.signalingState == ConnectionState.Connected && !state.paired
+            )
+            Button(
+                onClick = viewModel::pair,
+                enabled = state.signalingState == ConnectionState.Connected && !state.paired,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Pair with HOST") }
+        }
         Text("Signaling: ${state.signalingState}")
         Text("HOST: ${if (state.hostOnline) "online" else "offline"}")
         Text("Paired: ${state.paired}")

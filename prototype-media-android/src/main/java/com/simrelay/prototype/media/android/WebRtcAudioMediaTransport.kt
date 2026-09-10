@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicReference
 class WebRtcAudioMediaTransport(
     context: Context,
     private val signaling: SignalingTransport,
-    private val iceServerUrls: List<String> = listOf("stun:stun.l.google.com:19302")
+    private val iceServerUrls: List<String> = emptyList()
 ) : MediaTransport {
     override val pcmFormat = PrototypeAudioFormat(48_000)
     private val lock = Any()

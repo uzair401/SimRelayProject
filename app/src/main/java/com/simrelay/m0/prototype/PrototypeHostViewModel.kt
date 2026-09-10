@@ -12,13 +12,24 @@ import com.simrelay.m0.audio.fake.FakeCallAudioBackend
 import com.simrelay.prototype.call.CallControlResult
 import com.simrelay.prototype.call.PrototypeCallState
 import com.simrelay.prototype.media.android.WebRtcAudioMediaTransport
+import com.simrelay.prototype.pairing.DirectPairingPayload
+import com.simrelay.prototype.pairing.DirectPairingPayloadCodec
 import com.simrelay.prototype.pairing.PairingCodeGenerator
 import com.simrelay.prototype.transport.ConnectionState
-import com.simrelay.prototype.transport.OkHttpSignalingTransport
+import com.simrelay.prototype.transport.DevelopmentBackendSignalingTransport
+import com.simrelay.prototype.transport.DirectPeerAddressResolver
+import com.simrelay.prototype.transport.DirectPeerConfiguration
+import com.simrelay.prototype.transport.DirectPeerSignalingTransport
+import com.simrelay.prototype.transport.PrototypeSignalingMode
+import com.simrelay.prototype.transport.SignalingTransport
 import java.util.UUID
 
 data class PrototypeHostUiState(
+    val signalingMode: PrototypeSignalingMode = PrototypeSignalingMode.DirectPeer,
     val serverUrl: String = "ws://10.0.2.2:8000/ws",
+    val directAddress: String = DirectPeerAddressResolver.findLanIpv4() ?: "127.0.0.1",
+    val directPort: String = DefaultDirectPort.toString(),
+    val directPairingPayload: String? = null,
     val pairingCode: String? = null,
     val pairingExpiresAtMillis: Long? = null,
     val signalingState: ConnectionState = ConnectionState.Disconnected,
@@ -37,11 +48,15 @@ data class PrototypeHostUiState(
     val outboundRtpPackets: Long = 0,
     val inboundRtpPackets: Long = 0,
     val lastError: String? = null
-)
+) {
+    companion object {
+        const val DefaultDirectPort = 38_475
+    }
+}
 
 class PrototypeHostViewModel(application: Application) : AndroidViewModel(application) {
     private val handler = Handler(Looper.getMainLooper())
-    private val pairingCodes = PairingCodeGenerator()
+    private val pairingCodes = PairingCodeGenerator(digitCount = 9)
     private val backendFactory = PrototypeHostBackendFactory(application)
     private val configuration = PrototypeHostConfiguration()
     private val hostId = UUID.randomUUID().toString()
@@ -53,11 +68,36 @@ class PrototypeHostViewModel(application: Application) : AndroidViewModel(applic
 
     fun setServerUrl(value: String) = update { it.copy(serverUrl = value) }
 
+    fun setDirectAddress(value: String) = update { it.copy(directAddress = value.trim()) }
+
+    fun setDirectPort(value: String) = update { it.copy(directPort = value.filter(Char::isDigit).take(5)) }
+
+    fun refreshDirectAddress() {
+        if (uiState.value.signalingState != ConnectionState.Disconnected) return
+        val address = DirectPeerAddressResolver.findLanIpv4()
+        update {
+            it.copy(
+                directAddress = address ?: it.directAddress,
+                lastError = if (address == null) "No reachable hotspot/LAN IPv4 address detected" else null
+            )
+        }
+    }
+
+    fun setSignalingMode(value: PrototypeSignalingMode) {
+        if (uiState.value.signalingState == ConnectionState.Disconnected) {
+            update { it.copy(signalingMode = value, lastError = null) }
+        }
+    }
+
     fun connect() {
         disconnect()
         val code = pairingCodes.generate()
         val expiresAt = System.currentTimeMillis() + PairingLifetimeMillis
-        val signaling = OkHttpSignalingTransport(uiState.value.serverUrl)
+        val signalingSetup = createSignaling(code, expiresAt).getOrElse { throwable ->
+            update { it.copy(lastError = throwable.message ?: "Invalid signaling configuration") }
+            return
+        }
+        val signaling = signalingSetup.transport
         var createdBackends: PrototypeHostBackends? = null
         var createdMedia: WebRtcAudioMediaTransport? = null
         val setup = runCatching {
@@ -90,8 +130,12 @@ class PrototypeHostViewModel(application: Application) : AndroidViewModel(applic
         registrationSent = false
         update {
             PrototypeHostUiState(
+                signalingMode = it.signalingMode,
                 serverUrl = it.serverUrl,
-                pairingCode = code,
+                directAddress = it.directAddress,
+                directPort = it.directPort,
+                directPairingPayload = signalingSetup.directPairingPayload,
+                pairingCode = if (it.signalingMode == PrototypeSignalingMode.DevelopmentBackend) code else null,
                 pairingExpiresAtMillis = expiresAt,
                 audioBackendId = audio.id,
                 callControlBackend = configuration.callControlBackend.name
@@ -139,7 +183,14 @@ class PrototypeHostViewModel(application: Application) : AndroidViewModel(applic
         coordinator = null
         fakeAudio = null
         registrationSent = false
-        update { PrototypeHostUiState(serverUrl = it.serverUrl) }
+        update {
+            PrototypeHostUiState(
+                signalingMode = it.signalingMode,
+                serverUrl = it.serverUrl,
+                directAddress = it.directAddress,
+                directPort = it.directPort
+            )
+        }
     }
 
     override fun onCleared() {
@@ -160,7 +211,37 @@ class PrototypeHostViewModel(application: Application) : AndroidViewModel(applic
         Log.i("SimRelayPrototype", "event=$event${if (detail.isEmpty()) "" else " $detail"}")
     }
 
+    private fun createSignaling(pairingToken: String, expiresAtMillis: Long): Result<HostSignalingSetup> = runCatching {
+        when (uiState.value.signalingMode) {
+            PrototypeSignalingMode.DirectPeer -> {
+                val port = uiState.value.directPort.toIntOrNull()
+                require(port != null && port in 1..65_535) { "Direct signaling port must be between 1 and 65535" }
+                val payload = DirectPairingPayload(
+                    host = uiState.value.directAddress,
+                    port = port,
+                    pairingToken = pairingToken,
+                    expiresAtMillis = expiresAtMillis
+                )
+                HostSignalingSetup(
+                    DirectPeerSignalingTransport(
+                        DirectPeerConfiguration.Host(port, pairingToken, expiresAtMillis)
+                    ),
+                    DirectPairingPayloadCodec.encode(payload)
+                )
+            }
+            PrototypeSignalingMode.DevelopmentBackend -> HostSignalingSetup(
+                DevelopmentBackendSignalingTransport(uiState.value.serverUrl),
+                null
+            )
+        }
+    }
+
     companion object {
         private const val PairingLifetimeMillis = 5 * 60 * 1_000L
     }
 }
+
+private data class HostSignalingSetup(
+    val transport: SignalingTransport,
+    val directPairingPayload: String?
+)

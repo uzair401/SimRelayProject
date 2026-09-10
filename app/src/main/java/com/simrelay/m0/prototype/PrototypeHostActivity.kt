@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +24,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.simrelay.m0.ui.theme.SimRelayM0Theme
 import com.simrelay.prototype.call.PrototypeCallState
 import com.simrelay.prototype.transport.ConnectionState
+import com.simrelay.prototype.transport.PrototypeSignalingMode
 import java.text.DateFormat
 import java.util.Date
 
@@ -48,18 +50,61 @@ private fun PrototypeHostScreen(viewModel: PrototypeHostViewModel) {
         Text("SimRelay HOST", style = MaterialTheme.typography.headlineSmall)
         Text("Audio backend: ${state.audioBackendId.value}")
         Text("Call control: ${state.callControlBackend}")
-        OutlinedTextField(
-            value = state.serverUrl,
-            onValueChange = viewModel::setServerUrl,
-            label = { Text("Signaling WebSocket URL") },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = state.signalingState == ConnectionState.Disconnected
-        )
+        Text("Local network: ${if (state.directAddress == "127.0.0.1") "manual address needed" else "address detected"}")
+        Text("Signaling mode: ${state.signalingMode}")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(
+                onClick = { viewModel.setSignalingMode(PrototypeSignalingMode.DirectPeer) },
+                enabled = state.signalingState == ConnectionState.Disconnected,
+                modifier = Modifier.weight(1f)
+            ) { Text("Hotspot / LAN") }
+            Button(
+                onClick = { viewModel.setSignalingMode(PrototypeSignalingMode.DevelopmentBackend) },
+                enabled = state.signalingState == ConnectionState.Disconnected,
+                modifier = Modifier.weight(1f)
+            ) { Text("Dev backend") }
+        }
+        if (state.signalingMode == PrototypeSignalingMode.DirectPeer) {
+            OutlinedTextField(
+                value = state.directAddress,
+                onValueChange = viewModel::setDirectAddress,
+                label = { Text("HOST hotspot/LAN address") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.signalingState == ConnectionState.Disconnected
+            )
+            OutlinedTextField(
+                value = state.directPort,
+                onValueChange = viewModel::setDirectPort,
+                label = { Text("Direct signaling port") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.signalingState == ConnectionState.Disconnected
+            )
+            Button(
+                onClick = viewModel::refreshDirectAddress,
+                enabled = state.signalingState == ConnectionState.Disconnected,
+                modifier = Modifier.fillMaxWidth()
+            ) { Text("Refresh local address") }
+        } else {
+            OutlinedTextField(
+                value = state.serverUrl,
+                onValueChange = viewModel::setServerUrl,
+                label = { Text("Development signaling WebSocket URL") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = state.signalingState == ConnectionState.Disconnected
+            )
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = viewModel::connect, modifier = Modifier.weight(1f)) { Text("Connect HOST") }
             Button(onClick = viewModel::disconnect, modifier = Modifier.weight(1f)) { Text("Disconnect") }
         }
-        Text("Pairing code: ${state.pairingCode ?: "connect first"}")
+        if (state.signalingMode == PrototypeSignalingMode.DirectPeer) {
+            Text("Copy this payload to the CLIENT:")
+            SelectionContainer {
+                Text(state.directPairingPayload ?: "connect first")
+            }
+        } else {
+            Text("Pairing code: ${state.pairingCode ?: "connect first"}")
+        }
         Text(
             "Expires: ${state.pairingExpiresAtMillis?.let { DateFormat.getTimeInstance().format(Date(it)) } ?: "not active"}"
         )
