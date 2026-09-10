@@ -1,0 +1,11 @@
+package=com.simrelay.m0
+installed=true
+apk_path=/data/app/~~YNXWmYo5cVCcq7kNvKU0yA==/com.simrelay.m0-4vDEUj0z49EaXr8IhJhe1w==/base.apk
+system_app=false
+privileged_app=false
+    userId=10380
+    codePath=/data/app/~~YNXWmYo5cVCcq7kNvKU0yA==/com.simrelay.m0-4vDEUj0z49EaXr8IhJhe1w==
+    versionCode=1 minSdk=24 targetSdk=36
+    versionName=1.0
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]

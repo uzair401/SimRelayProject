@@ -14,7 +14,36 @@ enum class PrototypeCallState {
 
 enum class CallDirection {
     Incoming,
-    Outgoing
+    Outgoing,
+    Unknown
+}
+
+enum class CallControlAction {
+    Observe,
+    Answer,
+    Reject,
+    Hangup,
+    Dial,
+    SimulateIncoming
+}
+
+enum class CallControlCapabilityState {
+    Supported,
+    UnsupportedByOs,
+    PermissionMissing,
+    RoleOrPrivilegeMissing,
+    InvalidRequest,
+    RuntimeFailure
+}
+
+data class CallControlCapability(
+    val action: CallControlAction,
+    val state: CallControlCapabilityState,
+    val message: String,
+    val requiredPermission: String? = null
+) {
+    val isSupported: Boolean
+        get() = state == CallControlCapabilityState.Supported
 }
 
 data class PrototypeCall(
@@ -31,7 +60,10 @@ data class CallControlSnapshot(
 
 sealed interface CallControlResult {
     data class Success(val snapshot: CallControlSnapshot) : CallControlResult
-    data class Failure(val reason: String) : CallControlResult
+    data class Failure(
+        val reason: String,
+        val capability: CallControlCapability? = null
+    ) : CallControlResult
 }
 
 fun interface CallControlListener {
@@ -40,6 +72,7 @@ fun interface CallControlListener {
 
 interface CallControlBackend : AutoCloseable {
     fun snapshot(): CallControlSnapshot
+    fun capabilities(): List<CallControlCapability>
     fun setListener(listener: CallControlListener?)
     fun simulateIncomingCall(sessionId: String, displayIdentity: String): CallControlResult
     fun answer(sessionId: String): CallControlResult

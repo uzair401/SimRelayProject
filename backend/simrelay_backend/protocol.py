@@ -11,6 +11,7 @@ MESSAGE_TYPES = {
     "pair_request",
     "pair_success",
     "pair_failed",
+    "peer_disconnected",
     "incoming_call",
     "outgoing_call",
     "answer",

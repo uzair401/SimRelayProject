@@ -24,4 +24,5 @@ dependencies {
     implementation(libs.webrtc.android)
     androidTestImplementation(libs.androidx.core.ktx)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
 }

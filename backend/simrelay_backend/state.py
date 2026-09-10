@@ -60,15 +60,15 @@ class RelayState:
         if pair is None:
             return
         peer = pair.client if pair.host is connection else pair.host
-        if pair.session_id is not None:
-            await peer.send(
-                SignalMessage(
-                    message_type="hangup",
-                    session_id=pair.session_id,
-                    payload={"reason": "peer_disconnected"},
-                )
+        await peer.send(
+            SignalMessage(
+                message_type="peer_disconnected",
+                session_id=pair.session_id,
+                payload={"reason": "peer_disconnected"},
             )
-        self._pairs.remove(pair)
+        )
+        if pair in self._pairs:
+            self._pairs.remove(pair)
 
     async def _register_host(self, connection: Connection, message: SignalMessage) -> None:
         if connection.role is not None:
@@ -122,6 +122,12 @@ class RelayState:
     async def _route(self, connection: Connection, message: SignalMessage) -> None:
         pair = self._pair_for(connection)
         if pair is None:
+            if message.message_type == "call_state" and message.payload.get("state") in {
+                "ended",
+                "failure",
+                "idle",
+            }:
+                return
             await self._error(connection, message.session_id, "Paired peer is required")
             return
         if message.message_type == "incoming_call" and connection is not pair.host:

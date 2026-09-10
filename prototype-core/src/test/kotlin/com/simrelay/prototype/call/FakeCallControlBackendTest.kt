@@ -20,6 +20,7 @@ class FakeCallControlBackendTest {
         assertTrue(backend.simulateIncomingCall("two", "Second prototype caller") is CallControlResult.Success)
         assertEquals(PrototypeCallState.Ringing, backend.snapshot().state)
         assertTrue(states.containsAll(listOf(PrototypeCallState.Ringing, PrototypeCallState.Active, PrototypeCallState.Ended)))
+        assertEquals(1, states.count { it == PrototypeCallState.Ended })
     }
 
     @Test

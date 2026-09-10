@@ -12,20 +12,20 @@ HOST Android app
   PrototypeSessionCoordinator
            ↓
   OkHttpSignalingTransport ───── FastAPI WebSocket backend
-  WebRtcPcmMediaTransport  ───── WebRTC peer connection
+  WebRtcAudioMediaTransport ─── WebRTC Opus/RTP audio
                                       ↓
                               Android CLIENT app
 ```
 
-The HOST fake audio source produces deterministic mono PCM16 at 16 kHz in 20 ms frames. It never opens the HOST microphone or speaker. The CLIENT owns the only physical `AudioRecord` and `AudioTrack` in the prototype.
+The HOST fake audio source produces deterministic mono PCM16 at 16 kHz in 20 ms frames. The coordinator adapts this to the WebRTC boundary. The WebRTC HOST microphone input is disabled and its physical output is muted, so fake HOST media does not use audible or captured HOST hardware. The CLIENT owns functional microphone capture and speaker playback.
 
 ## Module boundaries
 
 | Location | Responsibility |
 |---|---|
-| `prototype-core/` | Versioned signaling model, validation, fake call control, pairing-code generator, PCM frame codec, format adapter, transport interfaces |
-| `prototype-media-android/` | WebRTC peer connection and binary media data channel |
-| `app/` | Existing HOST app, unchanged privileged backend stack, fake audio backend, coordinator, HOST prototype UI |
+| `prototype-core/` | Versioned signaling model, validation, fake call control, pairing-code generator, PCM adapter/buffering, transport interfaces |
+| `prototype-media-android/` | Isolated WebRTC peer connection, external PCM bridge, Opus/RTP media, and transport statistics |
+| `app/` | Existing HOST app, privileged backend stack, fake audio backend, coordinator, backend selection, PSTN control seam, HOST prototype UI |
 | `client-android/` | Pairing/call UI and CLIENT microphone/speaker adapter |
 | `backend/` | In-memory FastAPI WebSocket pairing and signaling router |
 
@@ -43,7 +43,7 @@ HOST simulateIncomingCall
 → Answering
 → Active
 → HOST creates WebRTC offer
-→ data channel opens
+→ audio RTP connection opens
 → fake RX and TX sessions start
 ```
 
@@ -54,23 +54,29 @@ CLIENT outgoing_call
 → HOST Dialing
 → Active
 → HOST creates WebRTC offer
-→ data channel opens
+→ audio RTP connection opens
 → fake RX and TX sessions start
 ```
 
 Terminal fake call states pass through `Ended` and return to `Idle`, allowing a new session.
 
-## Media V0
+## Media V1
 
-The current media payload is PCM16 carried in an unordered WebRTC data channel with zero retransmissions. Each binary message has a magic value, version, format metadata, sequence number, monotonic capture timestamp, and exactly one 20 ms mono frame.
+`WebRtcAudioMediaTransport` exposes 48 kHz mono PCM16 to the coordinator and carries primary voice through a WebRTC `SEND_RECV` audio transceiver. Only Opus is offered. Runtime statistics verify `audio/opus` and increasing inbound/outbound RTP packet and byte counts. No PCM DataChannel is created.
 
-This is real bidirectional WebRTC transport but not WebRTC RTP/Opus. The deliberate PCM V0 exposes the same raw frame boundary required by `FrameworkInterceptionBackend` and the CLIENT audio device without routing HOST audio through physical hardware. Opus packetization remains isolated to the media module and can replace the current binary payload without changing call control, signaling, pairing, coordinator, backend, or UI.
+`ExternalPcmAudioBridge` fills WebRTC capture buffers from HOST/backend PCM and emits decoded remote PCM through an audio-track sink. The bridge assembles WebRTC callback chunks into 20 ms application frames and uses bounded buffering. The HOST WebRTC audio device never reads the physical microphone. Its playback device remains muted while decoded PCM is delivered to the selected uplink sink.
 
-The V0 data rate is suitable only for local prototype testing. There is no TURN server, congestion controller for the application payload, jitter buffer, packet-loss concealment, or production TLS configuration.
+PeerConnection details, SDP, ICE, Opus, and RTP statistics remain inside the media module. The coordinator, call control, audio backends, backend service, and signaling envelope continue to depend only on `MediaTransport`.
 
 ## Format adaptation
 
-`AudioFormatAdapter` is the single PCM rate adaptation boundary. The wire format starts at 16 kHz mono PCM16/20 ms. A future PSTN backend may expose 8, 16, or 48 kHz; the coordinator adapts its frames at this boundary rather than scattering rate assumptions.
+`AudioFormatAdapter`, `PcmFrameAssembler`, and `PcmSampleBuffer` form the PCM adaptation boundary. The media boundary is 48 kHz mono PCM16/20 ms. HOST backends and CLIENT hardware may expose 8, 16, or 48 kHz; conversion, frame assembly, validation, and bounded buffering remain centralized.
+
+## Backend selection
+
+`PrototypeHostBackendFactory` selects `FakeCallAudioBackend` or `FrameworkInterceptionBackend`, and independently selects `FakeCallControlBackend` or `AndroidPstnCallControlBackend`. The default development configuration remains fake/fake. Selection does not alter coordinator, signaling, media, protocol, or CLIENT code.
+
+`AndroidPstnCallControlBackend` observes public telephony state and exposes typed capability results for answer, reject, hangup, and dial. It reports missing runtime permission, unavailable API level, role/privilege failure, invalid request, or runtime failure instead of faking success.
 
 ## Observability
 
@@ -81,7 +87,7 @@ HOST and CLIENT emit concise `SimRelayPrototype` events for signaling state, pai
 - in-memory backend state is lost on restart
 - one HOST/CLIENT pair per pairing credential
 - short-lived pairing code is sent over the signaling connection, so remote deployment requires `wss://`
-- WebRTC data-channel PCM is not yet Opus/RTP
-- public STUN is configured, with no TURN fallback
+- public STUN is configured with no TURN fallback, so restrictive NAT traversal is not covered
 - Android activities do not yet use foreground services
-- runtime media validation requires two active Android app processes or devices
+- on-device loopback validates media transport but not physical two-device acoustic behavior
+- real PSTN call control and audio remain unvalidated on a provisioned HOST

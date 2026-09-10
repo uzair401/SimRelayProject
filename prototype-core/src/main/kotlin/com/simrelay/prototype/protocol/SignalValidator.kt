@@ -32,6 +32,7 @@ object SignalValidator {
             SignalMessageType.IceCandidate -> required(message, "candidate", "sdp_mid", "sdp_mline_index")
             SignalMessageType.PairSuccess,
             SignalMessageType.PairFailed,
+            SignalMessageType.PeerDisconnected,
             SignalMessageType.Answer,
             SignalMessageType.Reject,
             SignalMessageType.Hangup,

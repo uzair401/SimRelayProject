@@ -8,6 +8,10 @@ class FakeCallControlBackend : CallControlBackend {
 
     override fun snapshot(): CallControlSnapshot = synchronized(lock) { current }
 
+    override fun capabilities(): List<CallControlCapability> = CallControlAction.entries.map {
+        CallControlCapability(it, CallControlCapabilityState.Supported, "Fake call control supports ${it.name}")
+    }
+
     override fun setListener(listener: CallControlListener?) {
         synchronized(lock) { this.listener = listener }
     }
@@ -86,7 +90,7 @@ class FakeCallControlBackend : CallControlBackend {
     ): CallControlResult = synchronized(lock) {
         if (!matches(sessionId) || current.state !in validStates) return@synchronized failure("No matching call")
         transitionLocked(terminalState)
-        transitionLocked(PrototypeCallState.Ended)
+        if (terminalState != PrototypeCallState.Ended) transitionLocked(PrototypeCallState.Ended)
         transitionLocked(PrototypeCallState.Idle, clearCall = true)
         CallControlResult.Success(current)
     }

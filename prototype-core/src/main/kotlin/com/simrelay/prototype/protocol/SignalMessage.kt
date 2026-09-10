@@ -17,6 +17,8 @@ enum class SignalMessageType {
     PairSuccess,
     @SerialName("pair_failed")
     PairFailed,
+    @SerialName("peer_disconnected")
+    PeerDisconnected,
     @SerialName("incoming_call")
     IncomingCall,
     @SerialName("outgoing_call")

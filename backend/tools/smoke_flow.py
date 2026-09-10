@@ -78,7 +78,7 @@ async def run(url: str = "ws://127.0.0.1:8000/ws") -> None:
         await host.send(message("incoming_call", disconnected, display_identity="Prototype caller"))
         await receive_type(client, "incoming_call", disconnected)
         await client.close()
-        ended = await receive_type(host, "hangup", disconnected)
+        ended = await receive_type(host, "peer_disconnected", disconnected)
         assert ended["payload"]["reason"] == "peer_disconnected"
 
     print("pairing=pass")

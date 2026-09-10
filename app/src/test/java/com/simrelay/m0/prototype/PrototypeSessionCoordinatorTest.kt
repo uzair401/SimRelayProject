@@ -1,6 +1,8 @@
 package com.simrelay.m0.prototype
 
 import com.simrelay.m0.audio.fake.FakeCallAudioBackend
+import com.simrelay.m0.audio.BackendResult
+import com.simrelay.m0.audio.PcmConfig
 import com.simrelay.prototype.call.FakeCallControlBackend
 import com.simrelay.prototype.call.PrototypeCallState
 import com.simrelay.prototype.media.PrototypeAudioFormat
@@ -9,6 +11,7 @@ import com.simrelay.prototype.protocol.SignalMessage
 import com.simrelay.prototype.protocol.SignalMessageType
 import com.simrelay.prototype.transport.ConnectionState
 import com.simrelay.prototype.transport.MediaTransport
+import com.simrelay.prototype.transport.MediaTransportStats
 import com.simrelay.prototype.transport.SignalingTransport
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -38,6 +41,7 @@ class PrototypeSessionCoordinatorTest {
         signaling.emit(SignalMessage(messageType = SignalMessageType.Answer, sessionId = "first"))
         media.connectCurrent()
         waitUntil { coordinator.snapshot().rxFrames > 0 }
+        assertEquals(media.pcmFormat, media.lastSentFormat)
         media.emitFrame()
         waitUntil { coordinator.snapshot().txFrames > 0 }
         signaling.emit(SignalMessage(messageType = SignalMessageType.Hangup, sessionId = "first"))
@@ -86,6 +90,67 @@ class PrototypeSessionCoordinatorTest {
         coordinator.close()
     }
 
+    @Test
+    fun peerDisconnectClearsPairingAndActiveSessionWithoutError() {
+        val signaling = FakeSignalingTransport()
+        val media = FakeMediaTransport()
+        val coordinator = PrototypeSessionCoordinator(
+            FakeCallControlBackend(),
+            FakeCallAudioBackend(),
+            signaling,
+            media,
+            idFactory = { "call" }
+        )
+        coordinator.connect()
+        signaling.emit(SignalMessage(messageType = SignalMessageType.PairSuccess))
+        coordinator.simulateIncomingCall()
+        signaling.emit(SignalMessage(messageType = SignalMessageType.Answer, sessionId = "call"))
+        media.connectCurrent()
+
+        signaling.emit(SignalMessage(messageType = SignalMessageType.PeerDisconnected, sessionId = "call"))
+
+        assertEquals(PrototypeCallState.Idle, coordinator.snapshot().callState)
+        assertNull(coordinator.snapshot().sessionId)
+        assertEquals(false, coordinator.snapshot().paired)
+        assertNull(coordinator.snapshot().lastError)
+        assertTrue(media.stopCount > 0)
+        coordinator.close()
+    }
+
+    @Test
+    fun audioOpenFailureIsContainedAndReported() {
+        val signaling = FakeSignalingTransport()
+        val media = FakeMediaTransport()
+        val audio = FakeCallAudioBackend()
+        val heldDownlink = (audio.openDownlink(PcmConfig(16_000)) as BackendResult.Success).value
+        val coordinator = PrototypeSessionCoordinator(
+            FakeCallControlBackend(),
+            audio,
+            signaling,
+            media
+        )
+
+        try {
+            coordinator.connect()
+            signaling.emit(SignalMessage(messageType = SignalMessageType.PairSuccess))
+            signaling.emit(
+                SignalMessage(
+                    messageType = SignalMessageType.OutgoingCall,
+                    sessionId = "blocked-audio",
+                    payload = mapOf("display_identity" to "Prototype destination")
+                )
+            )
+            media.connectCurrent()
+
+            assertTrue(coordinator.snapshot().lastError?.contains("already open") == true)
+            assertEquals(0, coordinator.snapshot().rxFrames)
+            assertEquals(0, coordinator.snapshot().txFrames)
+        } finally {
+            heldDownlink.close()
+            coordinator.close()
+        }
+    }
+
     private fun waitUntil(condition: () -> Boolean) {
         repeat(100) {
             if (condition()) return
@@ -131,10 +196,12 @@ class PrototypeSessionCoordinatorTest {
 
     private class FakeMediaTransport : MediaTransport {
         override var state = ConnectionState.Disconnected
+        override val pcmFormat = PrototypeAudioFormat(48_000)
         var frameCallback: ((PrototypeAudioFrame) -> Unit)? = null
         var stateCallback: ((ConnectionState, String?) -> Unit)? = null
         var startCount = 0
         var stopCount = 0
+        var lastSentFormat: PrototypeAudioFormat? = null
 
         override fun start(sessionId: String, initiator: Boolean) {
             startCount += 1
@@ -144,12 +211,19 @@ class PrototypeSessionCoordinatorTest {
 
         override fun handleSignal(message: SignalMessage) = Unit
 
-        override fun send(frame: PrototypeAudioFrame): Boolean = state == ConnectionState.Connected
+        override fun send(frame: PrototypeAudioFrame): Boolean {
+            lastSentFormat = frame.format
+            return state == ConnectionState.Connected
+        }
 
         override fun stop(reason: String) {
             stopCount += 1
             state = ConnectionState.Disconnected
             stateCallback?.invoke(state, null)
+        }
+
+        override fun requestStats(callback: (MediaTransportStats) -> Unit) {
+            callback(MediaTransportStats())
         }
 
         override fun setFrameListener(listener: ((PrototypeAudioFrame) -> Unit)?) {
@@ -166,7 +240,7 @@ class PrototypeSessionCoordinatorTest {
         }
 
         fun emitFrame() {
-            val format = PrototypeAudioFormat(16_000)
+            val format = pcmFormat
             frameCallback?.invoke(
                 PrototypeAudioFrame(format, 1, 1, ShortArray(format.samplesPerFrame) { 500 })
             )

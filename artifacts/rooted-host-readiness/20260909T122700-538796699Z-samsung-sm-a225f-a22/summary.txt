@@ -1,0 +1,9 @@
+artifact_directory=artifacts/rooted-host-readiness/20260909T122700-538796699Z-samsung-sm-a225f-a22
+installed=true
+privileged_app=false
+call_audio_interception_granted=false
+record_audio_granted=false
+framework_probe_observed=true
+first_rx_observed=false
+first_tx_observed=false
+session_release_observed=false

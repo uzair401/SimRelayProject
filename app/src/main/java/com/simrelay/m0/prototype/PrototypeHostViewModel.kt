@@ -7,11 +7,11 @@ import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
+import com.simrelay.m0.audio.AudioBackendId
 import com.simrelay.m0.audio.fake.FakeCallAudioBackend
 import com.simrelay.prototype.call.CallControlResult
-import com.simrelay.prototype.call.FakeCallControlBackend
 import com.simrelay.prototype.call.PrototypeCallState
-import com.simrelay.prototype.media.android.WebRtcPcmMediaTransport
+import com.simrelay.prototype.media.android.WebRtcAudioMediaTransport
 import com.simrelay.prototype.pairing.PairingCodeGenerator
 import com.simrelay.prototype.transport.ConnectionState
 import com.simrelay.prototype.transport.OkHttpSignalingTransport
@@ -31,12 +31,19 @@ data class PrototypeHostUiState(
     val droppedFrames: Long = 0,
     val txRms: Double = 0.0,
     val txPeak: Int = 0,
+    val audioBackendId: AudioBackendId = AudioBackendId.FakeDevelopment,
+    val callControlBackend: String = PrototypeCallControlBackendChoice.Fake.name,
+    val mediaCodec: String? = null,
+    val outboundRtpPackets: Long = 0,
+    val inboundRtpPackets: Long = 0,
     val lastError: String? = null
 )
 
 class PrototypeHostViewModel(application: Application) : AndroidViewModel(application) {
     private val handler = Handler(Looper.getMainLooper())
     private val pairingCodes = PairingCodeGenerator()
+    private val backendFactory = PrototypeHostBackendFactory(application)
+    private val configuration = PrototypeHostConfiguration()
     private val hostId = UUID.randomUUID().toString()
     private val _uiState = mutableStateOf(PrototypeHostUiState())
     val uiState: State<PrototypeHostUiState> = _uiState
@@ -51,27 +58,47 @@ class PrototypeHostViewModel(application: Application) : AndroidViewModel(applic
         val code = pairingCodes.generate()
         val expiresAt = System.currentTimeMillis() + PairingLifetimeMillis
         val signaling = OkHttpSignalingTransport(uiState.value.serverUrl)
-        val media = WebRtcPcmMediaTransport(getApplication(), signaling)
-        val audio = FakeCallAudioBackend()
-        val value = PrototypeSessionCoordinator(
-            FakeCallControlBackend(),
-            audio,
-            signaling,
-            media,
-            logger = PrototypeEventLogger(::log)
-        )
-        fakeAudio = audio
+        var createdBackends: PrototypeHostBackends? = null
+        var createdMedia: WebRtcAudioMediaTransport? = null
+        val setup = runCatching {
+            val backends = backendFactory.create(configuration)
+            createdBackends = backends
+            val media = WebRtcAudioMediaTransport(getApplication(), signaling)
+            createdMedia = media
+            val coordinator = PrototypeSessionCoordinator(
+                backends.callControl,
+                backends.audio,
+                signaling,
+                media,
+                logger = PrototypeEventLogger(::log),
+                audioConfig = backends.audioConfig
+            )
+            backends to coordinator
+        }.getOrElse { throwable ->
+            runCatching { createdMedia?.close() }
+            runCatching { createdBackends?.callControl?.close() }
+            runCatching { createdBackends?.audio?.close() }
+            signaling.close()
+            update { it.copy(lastError = "HOST setup failed: ${throwable.javaClass.simpleName}") }
+            return
+        }
+        val backends = setup.first
+        val audio = backends.audio
+        val value = setup.second
+        fakeAudio = audio as? FakeCallAudioBackend
         coordinator = value
         registrationSent = false
         update {
             PrototypeHostUiState(
                 serverUrl = it.serverUrl,
                 pairingCode = code,
-                pairingExpiresAtMillis = expiresAt
+                pairingExpiresAtMillis = expiresAt,
+                audioBackendId = audio.id,
+                callControlBackend = configuration.callControlBackend.name
             )
         }
         value.setListener { snapshot ->
-            val metrics = audio.metrics()
+            val metrics = fakeAudio?.metrics()
             update {
                 it.copy(
                     signalingState = snapshot.signalingState,
@@ -82,8 +109,11 @@ class PrototypeHostViewModel(application: Application) : AndroidViewModel(applic
                     rxFrames = snapshot.rxFrames,
                     txFrames = snapshot.txFrames,
                     droppedFrames = snapshot.droppedFrames,
-                    txRms = metrics.txRms,
-                    txPeak = metrics.txPeak,
+                    txRms = metrics?.txRms ?: 0.0,
+                    txPeak = metrics?.txPeak ?: 0,
+                    mediaCodec = snapshot.mediaStats.codec,
+                    outboundRtpPackets = snapshot.mediaStats.outboundPackets,
+                    inboundRtpPackets = snapshot.mediaStats.inboundPackets,
                     lastError = snapshot.lastError
                 )
             }

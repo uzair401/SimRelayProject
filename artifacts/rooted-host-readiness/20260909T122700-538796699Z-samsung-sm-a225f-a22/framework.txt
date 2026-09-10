@@ -1,0 +1,5 @@
+framework_api=09-09 17:25:49.184 29415 29622 I SimRelayM0: event=framework_api_state elapsed_ns=226359875352841 detail="interceptability=Accessible downlink=Accessible uplink=Accessible"
+backend=09-09 17:25:49.184 29415 29622 I SimRelayM0: event=backend_selected elapsed_ns=226359874842072 detail="backend=framework_interception"
+capability=09-09 17:25:49.185 29415 29622 I SimRelayM0: event=capability_changed elapsed_ns=226359876065072 detail="backend=framework_interception state=PermissionMissing"
+readiness=09-09 17:25:49.185 29415 29622 I SimRelayM0: event=readiness_changed elapsed_ns=226359876401149 detail="state=PermissionMissing callState=Idle audioMode=0"
+pstn_interceptable=09-09 17:25:49.185 29415 29622 I SimRelayM0: event=pstn_interceptable elapsed_ns=226359875671226 detail="value=Unknown"

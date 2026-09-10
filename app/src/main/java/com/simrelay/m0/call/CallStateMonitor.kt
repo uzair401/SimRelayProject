@@ -31,6 +31,9 @@ class CallStateMonitor(
         } catch (_: SecurityException) {
             registeredListener = null
             onStateChanged(CallState.Unknown)
+        } catch (_: RuntimeException) {
+            registeredListener = null
+            onStateChanged(CallState.Unknown)
         }
     }
 

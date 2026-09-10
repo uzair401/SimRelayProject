@@ -8,7 +8,8 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
 import com.simrelay.prototype.call.PrototypeCallState
-import com.simrelay.prototype.media.android.WebRtcPcmMediaTransport
+import com.simrelay.prototype.media.AudioFormatAdapter
+import com.simrelay.prototype.media.android.WebRtcAudioMediaTransport
 import com.simrelay.prototype.protocol.SignalMessage
 import com.simrelay.prototype.protocol.SignalMessageType
 import com.simrelay.prototype.transport.ConnectionState
@@ -50,7 +51,12 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
     fun connect() {
         disconnect()
         val transport = OkHttpSignalingTransport(uiState.value.serverUrl)
-        val mediaTransport = WebRtcPcmMediaTransport(getApplication(), transport)
+        val mediaTransport = runCatching { WebRtcAudioMediaTransport(getApplication(), transport) }
+            .getOrElse { throwable ->
+                transport.close()
+                update { it.copy(lastError = "CLIENT media setup failed: ${throwable.javaClass.simpleName}") }
+                return
+            }
         signaling = transport
         media = mediaTransport
         transport.setStateListener { state, detail ->
@@ -158,6 +164,10 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
                 update { it.copy(paired = true, hostOnline = true, pairingCode = "", lastError = null) }
             }
             SignalMessageType.PairFailed -> update { it.copy(lastError = message.payload["reason"] ?: "Pairing failed") }
+            SignalMessageType.PeerDisconnected -> {
+                endCall("peer_disconnected")
+                update { it.copy(paired = false, hostOnline = false, lastError = null) }
+            }
             SignalMessageType.IncomingCall -> update {
                 it.copy(
                     callState = PrototypeCallState.Ringing,
@@ -203,8 +213,13 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
     private fun startAudio(activeMedia: MediaTransport) {
         firstRx = false
         firstTx = false
-        val error = audio.start { frame ->
-            if (activeMedia.send(frame)) {
+        val error = audio.start(onFailure = ::handleAudioFailure) { frame ->
+            val wireFrame = runCatching { AudioFormatAdapter.adapt(frame, activeMedia.pcmFormat) }
+                .getOrElse { throwable ->
+                    update { it.copy(lastError = throwable.message ?: "Client audio adaptation failed") }
+                    return@start
+                }
+            if (activeMedia.send(wireFrame)) {
                 if (!firstTx) {
                     firstTx = true
                     log("first_tx")
@@ -213,6 +228,14 @@ class ClientViewModel(application: Application) : AndroidViewModel(application) 
             }
         }
         if (error != null) update { it.copy(lastError = error) }
+    }
+
+    private fun handleAudioFailure(reason: String) {
+        handler.post {
+            update { it.copy(lastError = reason) }
+            audio.stop()
+            media?.stop("client_audio_failed")
+        }
     }
 
     private fun endCall(reason: String) {

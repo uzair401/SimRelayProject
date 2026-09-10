@@ -45,8 +45,9 @@ private fun PrototypeHostScreen(viewModel: PrototypeHostViewModel) {
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Text("SimRelay Fake HOST", style = MaterialTheme.typography.headlineSmall)
-        Text("Development backend only — no PSTN or physical HOST audio")
+        Text("SimRelay HOST", style = MaterialTheme.typography.headlineSmall)
+        Text("Audio backend: ${state.audioBackendId.value}")
+        Text("Call control: ${state.callControlBackend}")
         OutlinedTextField(
             value = state.serverUrl,
             onValueChange = viewModel::setServerUrl,
@@ -67,6 +68,8 @@ private fun PrototypeHostScreen(viewModel: PrototypeHostViewModel) {
         Text("Call: ${state.callState}")
         Text("Session: ${state.sessionId ?: "none"}")
         Text("Media: ${state.mediaState}")
+        Text("Codec: ${state.mediaCodec ?: "not negotiated"}")
+        Text("RTP packets sent/received: ${state.outboundRtpPackets}/${state.inboundRtpPackets}")
         Text("RX/TX frames: ${state.rxFrames}/${state.txFrames}")
         Text("Dropped frames: ${state.droppedFrames}")
         Text("HOST TX RMS/peak: ${"%.2f".format(state.txRms)} / ${state.txPeak}")

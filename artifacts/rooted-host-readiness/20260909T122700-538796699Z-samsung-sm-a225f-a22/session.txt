@@ -1,0 +1,6 @@
+call_state=09-09 17:25:49.119 29415 29415 I SimRelayM0: event=call_state_changed elapsed_ns=226359810135841 detail="from=Unknown to=Idle"
+audio_mode=Unknown
+full_duplex=Unknown
+stop=Unknown
+released=Unknown
+prototype_cleanup=Unknown

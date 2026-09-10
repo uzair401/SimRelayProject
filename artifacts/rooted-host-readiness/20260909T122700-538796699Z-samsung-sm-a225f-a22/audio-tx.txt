@@ -1,0 +1,4 @@
+session_open=Unknown
+injection_started=Unknown
+first_tx=Unknown
+injection_failure=Unknown

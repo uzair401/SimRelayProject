@@ -117,5 +117,64 @@ async def test_disconnect_ends_active_session_for_peer() -> None:
 
     await state.disconnect(client)
 
-    assert host_sink.messages[-1].message_type == "hangup"
+    assert host_sink.messages[-1].message_type == "peer_disconnected"
+    assert host_sink.messages[-1].session_id == "session"
     assert host_sink.messages[-1].payload["reason"] == "peer_disconnected"
+
+
+@pytest.mark.asyncio
+async def test_idle_disconnect_notifies_peer() -> None:
+    state = RelayState(now_ms=lambda: 1_000)
+    host_sink = Sink()
+    client_sink = Sink()
+    host = Connection(host_sink.send)
+    client = Connection(client_sink.send)
+    await state.handle(
+        host,
+        SignalMessage(
+            message_type="host_online",
+            payload={"host_id": "host", "pairing_code": "123456", "expires_at_ms": "2000"},
+        ),
+    )
+    await state.handle(client, SignalMessage(message_type="client_online", payload={"client_id": "client"}))
+    await state.handle(client, SignalMessage(message_type="pair_request", payload={"pairing_code": "123456"}))
+
+    await state.disconnect(client)
+
+    assert host_sink.messages[-1].message_type == "peer_disconnected"
+    assert host_sink.messages[-1].session_id is None
+
+
+@pytest.mark.asyncio
+async def test_terminal_cleanup_after_peer_disconnect_is_idempotent() -> None:
+    state = RelayState(now_ms=lambda: 1_000)
+    host_sink = Sink()
+    client_sink = Sink()
+    host = Connection(host_sink.send)
+    client = Connection(client_sink.send)
+    await state.handle(
+        host,
+        SignalMessage(
+            message_type="host_online",
+            payload={"host_id": "host", "pairing_code": "123456", "expires_at_ms": "2000"},
+        ),
+    )
+    await state.handle(client, SignalMessage(message_type="client_online", payload={"client_id": "client"}))
+    await state.handle(client, SignalMessage(message_type="pair_request", payload={"pairing_code": "123456"}))
+    await state.handle(
+        host,
+        SignalMessage(
+            message_type="incoming_call",
+            session_id="session",
+            payload={"display_identity": "Prototype caller"},
+        ),
+    )
+    await state.disconnect(client)
+    message_count = len(host_sink.messages)
+
+    await state.handle(
+        host,
+        SignalMessage(message_type="call_state", session_id="session", payload={"state": "ended"}),
+    )
+
+    assert len(host_sink.messages) == message_count

@@ -34,18 +34,21 @@ class AndroidClientAudio(
     private var playbackFuture: Future<*>? = null
     private val format = PrototypeAudioFormat(16_000)
 
-    fun start(onCapturedFrame: (PrototypeAudioFrame) -> Unit): String? {
+    fun start(
+        onFailure: (String) -> Unit = {},
+        onCapturedFrame: (PrototypeAudioFrame) -> Unit
+    ): String? {
         if (!running.compareAndSet(false, true)) return null
         if (ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             running.set(false)
             return "Microphone permission is required"
         }
-        val audioRecord = createRecord() ?: run {
+        val audioRecord = runCatching { createRecord() }.getOrNull() ?: run {
             running.set(false)
             return "Client AudioRecord could not be initialized"
         }
-        val audioTrack = createTrack() ?: run {
-            audioRecord.release()
+        val audioTrack = runCatching { createTrack() }.getOrNull() ?: run {
+            runCatching { audioRecord.release() }
             running.set(false)
             return "Client AudioTrack could not be initialized"
         }
@@ -54,11 +57,27 @@ class AndroidClientAudio(
             audioTrack.play()
             record = audioRecord
             track = audioTrack
-            captureFuture = captureExecutor.submit { captureLoop(audioRecord, onCapturedFrame) }
-            playbackFuture = playbackExecutor.submit { playbackLoop(audioTrack) }
+            captureFuture = captureExecutor.submit {
+                containLoopFailure("Client audio capture failed", onFailure) {
+                    captureLoop(audioRecord, onCapturedFrame)
+                }
+            }
+            playbackFuture = playbackExecutor.submit {
+                containLoopFailure("Client audio playback failed", onFailure) {
+                    playbackLoop(audioTrack)
+                }
+            }
             null
         } catch (throwable: Throwable) {
             running.set(false)
+            runCatching { audioRecord.stop() }
+            runCatching { audioTrack.stop() }
+            waitFor(captureFuture)
+            waitFor(playbackFuture)
+            captureFuture = null
+            playbackFuture = null
+            record = null
+            track = null
             runCatching { audioRecord.release() }
             runCatching { audioTrack.release() }
             throwable.message ?: "Client audio start failed"
@@ -80,7 +99,7 @@ class AndroidClientAudio(
         record = null
         track = null
         runCatching { currentRecord?.stop() }
-        runCatching { currentTrack?.pause() }
+        runCatching { currentTrack?.stop() }
         waitFor(captureFuture)
         waitFor(playbackFuture)
         captureFuture = null
@@ -89,7 +108,6 @@ class AndroidClientAudio(
         runCatching { currentRecord?.release() }
         runCatching {
             currentTrack?.flush()
-            currentTrack?.stop()
             currentTrack?.release()
         }
     }
@@ -107,7 +125,7 @@ class AndroidClientAudio(
             var offset = 0
             while (offset < frame.size && running.get()) {
                 val count = audioRecord.read(frame, offset, frame.size - offset, AudioRecord.READ_BLOCKING)
-                if (count <= 0) return
+                if (count <= 0) error("AudioRecord read returned $count")
                 offset += count
             }
             if (offset == frame.size && running.get()) {
@@ -127,7 +145,7 @@ class AndroidClientAudio(
                     frame.samples.size - offset,
                     AudioTrack.WRITE_BLOCKING
                 )
-                if (written <= 0) return
+                if (written <= 0) error("AudioTrack write returned $written")
                 offset += written
             }
         }
@@ -156,6 +174,16 @@ class AndroidClientAudio(
         return value.takeIf { it.state == AudioRecord.STATE_INITIALIZED } ?: run {
             value.release()
             null
+        }
+    }
+
+    private fun containLoopFailure(
+        fallback: String,
+        onFailure: (String) -> Unit,
+        operation: () -> Unit
+    ) {
+        runCatching(operation).onFailure { throwable ->
+            if (running.get()) runCatching { onFailure(throwable.message ?: fallback) }
         }
     }
 

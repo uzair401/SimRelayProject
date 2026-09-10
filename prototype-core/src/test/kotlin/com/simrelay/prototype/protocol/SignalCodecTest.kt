@@ -37,4 +37,11 @@ class SignalCodecTest {
             SignalCodec.decode(encoded)
         )
     }
+
+    @Test
+    fun peerDisconnectedDoesNotRequireAnActiveSession() {
+        val message = SignalMessage(messageType = SignalMessageType.PeerDisconnected)
+
+        assertEquals(SignalDecodeResult.Success(message), SignalCodec.decode(SignalCodec.encode(message)))
+    }
 }

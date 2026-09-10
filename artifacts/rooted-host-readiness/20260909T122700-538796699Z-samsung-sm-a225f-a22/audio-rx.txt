@@ -1,0 +1,4 @@
+session_open=Unknown
+capture_started=Unknown
+first_rx=Unknown
+capture_failure=Unknown

@@ -17,6 +17,7 @@ import com.simrelay.prototype.protocol.SignalMessage
 import com.simrelay.prototype.protocol.SignalMessageType
 import com.simrelay.prototype.transport.ConnectionState
 import com.simrelay.prototype.transport.MediaTransport
+import com.simrelay.prototype.transport.MediaTransportStats
 import com.simrelay.prototype.transport.SignalingTransport
 import java.util.UUID
 import java.util.concurrent.ExecutorService
@@ -34,6 +35,7 @@ data class PrototypeSessionSnapshot(
     val rxFrames: Long = 0,
     val txFrames: Long = 0,
     val droppedFrames: Long = 0,
+    val mediaStats: MediaTransportStats = MediaTransportStats(),
     val lastError: String? = null
 )
 
@@ -51,6 +53,7 @@ class PrototypeSessionCoordinator(
     private val signaling: SignalingTransport,
     private val media: MediaTransport,
     private val logger: PrototypeEventLogger = PrototypeEventLogger { _, _ -> },
+    private val audioConfig: PcmConfig = PcmConfig(16_000),
     private val idFactory: () -> String = { UUID.randomUUID().toString() },
     private val nanoTime: () -> Long = System::nanoTime,
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
@@ -66,7 +69,6 @@ class PrototypeSessionCoordinator(
     private var firstTx = false
     private var incomingAnnouncedFor: String? = null
     private var closed = false
-    private val wireFormat = PrototypeAudioFormat(16_000)
 
     init {
         callControl.setListener(::onCallStateChanged)
@@ -139,6 +141,7 @@ class PrototypeSessionCoordinator(
                 update { it.copy(paired = true, lastError = null) }
             }
             SignalMessageType.PairFailed -> fail(message.payload["reason"] ?: "Pairing failed")
+            SignalMessageType.PeerDisconnected -> onPeerDisconnected(message)
             SignalMessageType.Answer -> withSession(message) { callControl.answer(it) }
             SignalMessageType.Reject -> withSession(message) { callControl.reject(it) }
             SignalMessageType.Hangup -> withSession(message) { callControl.hangup(it) }
@@ -162,6 +165,17 @@ class PrototypeSessionCoordinator(
             SignalMessageType.IncomingCall,
             SignalMessageType.CallState -> Unit
         }
+    }
+
+    private fun onPeerDisconnected(message: SignalMessage) {
+        val sessionId = snapshot().sessionId
+        if (sessionId != null && (message.sessionId == null || message.sessionId == sessionId)) {
+            callControl.hangup(sessionId)
+        } else {
+            stopMedia("peer_disconnected")
+        }
+        update { it.copy(paired = false, lastError = null) }
+        logger.log("peer_disconnected", emptyMap())
     }
 
     private fun withSession(message: SignalMessage, action: (String) -> CallControlResult) {
@@ -258,49 +272,70 @@ class PrototypeSessionCoordinator(
 
     private fun startAudio() {
         if (!mediaRunning.compareAndSet(false, true)) return
+        runCatching { startAudioInternal() }.onFailure { throwable ->
+            mediaRunning.set(false)
+            stopAudioResources()
+            fail("Audio start failed: ${throwable.javaClass.simpleName}")
+        }
+    }
+
+    private fun startAudioInternal() {
         val capability = audioBackend.probe()
         if (!capability.isSupported) {
             mediaRunning.set(false)
             fail(capability.message)
             return
         }
-        val config = PcmConfig(wireFormat.sampleRateHz)
+        val config = audioConfig
         val openedDownlink = audioBackend.openDownlink(config)
-        val openedUplink = audioBackend.openUplink(config)
-        if (openedDownlink !is BackendResult.Success || openedUplink !is BackendResult.Success) {
-            (openedDownlink as? BackendResult.Success)?.value?.close()
-            (openedUplink as? BackendResult.Success)?.value?.close()
+        if (openedDownlink !is BackendResult.Success) {
             mediaRunning.set(false)
-            fail(
-                (openedDownlink as? BackendResult.Failure)?.capability?.message
-                    ?: (openedUplink as? BackendResult.Failure)?.capability?.message
-                    ?: "Audio session could not be opened"
-            )
+            fail((openedDownlink as BackendResult.Failure).capability.message)
             return
         }
         val downlinkValue = openedDownlink.value
-        val uplinkValue = openedUplink.value
-        val downlinkStart = downlinkValue.start()
-        val uplinkStart = uplinkValue.start()
-        if (downlinkStart is BackendResult.Failure || uplinkStart is BackendResult.Failure) {
-            downlinkValue.stop()
-            uplinkValue.stop()
-            downlinkValue.close()
-            uplinkValue.close()
+        val openedUplink = runCatching { audioBackend.openUplink(config) }.getOrElse { throwable ->
+            closePendingAudio(downlinkValue, null)
+            throw throwable
+        }
+        if (openedUplink !is BackendResult.Success) {
+            closePendingAudio(downlinkValue, null)
             mediaRunning.set(false)
-            fail(
-                (downlinkStart as? BackendResult.Failure)?.capability?.message
-                    ?: (uplinkStart as? BackendResult.Failure)?.capability?.message
-                    ?: "Audio session could not start"
-            )
+            fail((openedUplink as BackendResult.Failure).capability.message)
             return
+        }
+        val uplinkValue = openedUplink.value
+        val downlinkStart = runCatching { downlinkValue.start() }.getOrElse { throwable ->
+            closePendingAudio(downlinkValue, uplinkValue)
+            throw throwable
+        }
+        if (downlinkStart is BackendResult.Failure) {
+            closePendingAudio(downlinkValue, uplinkValue)
+            mediaRunning.set(false)
+            fail(downlinkStart.capability.message)
+            return
+        }
+        val uplinkStart = runCatching { uplinkValue.start() }.getOrElse { throwable ->
+            closePendingAudio(downlinkValue, uplinkValue)
+            throw throwable
+        }
+        if (uplinkStart is BackendResult.Failure) {
+            closePendingAudio(downlinkValue, uplinkValue)
+            mediaRunning.set(false)
+            fail(uplinkStart.capability.message)
+            return
+        }
+        val future = runCatching { executor.submit { rxLoop(downlinkValue) } }.getOrElse { throwable ->
+            closePendingAudio(downlinkValue, uplinkValue)
+            mediaRunning.set(false)
+            throw throwable
         }
         synchronized(lock) {
             downlink = downlinkValue
             uplink = uplinkValue
             firstRx = false
             firstTx = false
-            rxFuture = executor.submit { rxLoop(downlinkValue) }
+            rxFuture = future
         }
         logger.log("audio_started", mapOf("session_id" to (snapshot().sessionId ?: "unknown")))
     }
@@ -320,15 +355,19 @@ class PrototypeSessionCoordinator(
                             continue
                         }
                         val source = PrototypeAudioFrame(sourceFormat, sequence++, nanoTime(), sourceSamples)
-                        val wireFrame = AudioFormatAdapter.adapt(source, wireFormat)
+                        val wireFrame = AudioFormatAdapter.adapt(source, media.pcmFormat)
                         if (media.send(wireFrame)) {
                             val shouldLog = synchronized(lock) {
                                 val value = !firstRx
                                 firstRx = true
                                 value
                             }
-                            if (shouldLog) logger.log("first_rx", mapOf("session_id" to (snapshot().sessionId ?: "unknown")))
+                            if (shouldLog) {
+                                logger.log("first_rx", mapOf("session_id" to (snapshot().sessionId ?: "unknown")))
+                                refreshMediaStats()
+                            }
                             update { it.copy(rxFrames = it.rxFrames + 1) }
+                            if (sequence % 50L == 0L) refreshMediaStats()
                         } else {
                             incrementDropped()
                         }
@@ -346,6 +385,12 @@ class PrototypeSessionCoordinator(
 
     private fun onRemoteFrame(frame: PrototypeAudioFrame) {
         if (!mediaRunning.get()) return
+        runCatching { writeRemoteFrame(frame) }.onFailure { throwable ->
+            if (mediaRunning.get()) fail("Remote audio write failed: ${throwable.javaClass.simpleName}")
+        }
+    }
+
+    private fun writeRemoteFrame(frame: PrototypeAudioFrame) {
         val session = synchronized(lock) { uplink } ?: return
         val adapted = AudioFormatAdapter.adapt(frame, PrototypeAudioFormat(session.config.sampleRateHz))
         var offset = 0
@@ -369,7 +414,10 @@ class PrototypeSessionCoordinator(
             firstTx = true
             value
         }
-        if (shouldLog) logger.log("first_tx", mapOf("session_id" to (snapshot().sessionId ?: "unknown")))
+        if (shouldLog) {
+            logger.log("first_tx", mapOf("session_id" to (snapshot().sessionId ?: "unknown")))
+            refreshMediaStats()
+        }
         update { it.copy(txFrames = it.txFrames + 1) }
     }
 
@@ -387,6 +435,10 @@ class PrototypeSessionCoordinator(
 
     private fun stopAudio() {
         if (!mediaRunning.compareAndSet(true, false)) return
+        stopAudioResources()
+    }
+
+    private fun stopAudioResources() {
         val resources = synchronized(lock) {
             val value = Triple(downlink, uplink, rxFuture)
             downlink = null
@@ -394,15 +446,29 @@ class PrototypeSessionCoordinator(
             rxFuture = null
             value
         }
-        resources.first?.stop()
-        resources.second?.stop()
+        runCatching { resources.first?.stop() }.onFailure { logCleanupFailure("downlink_stop", it) }
+        runCatching { resources.second?.stop() }.onFailure { logCleanupFailure("uplink_stop", it) }
         try {
             resources.third?.get(500, TimeUnit.MILLISECONDS)
         } catch (exception: Exception) {
             resources.third?.cancel(true)
         }
-        resources.first?.close()
-        resources.second?.close()
+        runCatching { resources.first?.close() }.onFailure { logCleanupFailure("downlink_close", it) }
+        runCatching { resources.second?.close() }.onFailure { logCleanupFailure("uplink_close", it) }
+    }
+
+    private fun logCleanupFailure(operation: String, throwable: Throwable) {
+        logger.log(
+            "cleanup_failure",
+            mapOf("operation" to operation, "error" to throwable.javaClass.simpleName)
+        )
+    }
+
+    private fun closePendingAudio(downlink: DownlinkSession?, uplink: UplinkSession?) {
+        runCatching { downlink?.stop() }.onFailure { logCleanupFailure("pending_downlink_stop", it) }
+        runCatching { uplink?.stop() }.onFailure { logCleanupFailure("pending_uplink_stop", it) }
+        runCatching { downlink?.close() }.onFailure { logCleanupFailure("pending_downlink_close", it) }
+        runCatching { uplink?.close() }.onFailure { logCleanupFailure("pending_uplink_close", it) }
     }
 
     private fun sendSessionError(sessionId: String, reason: String) {
@@ -423,6 +489,25 @@ class PrototypeSessionCoordinator(
 
     private fun incrementDropped() {
         update { it.copy(droppedFrames = it.droppedFrames + 1) }
+    }
+
+    private fun refreshMediaStats() {
+        val requestedSession = snapshot().sessionId ?: return
+        media.requestStats { stats ->
+            if (snapshot().sessionId != requestedSession) return@requestStats
+            update { it.copy(mediaStats = stats) }
+            logger.log(
+                "media_stats",
+                mapOf(
+                    "session_id" to requestedSession,
+                    "codec" to (stats.codec ?: "unknown"),
+                    "outbound_packets" to stats.outboundPackets.toString(),
+                    "inbound_packets" to stats.inboundPackets.toString(),
+                    "outbound_bytes" to stats.outboundBytes.toString(),
+                    "inbound_bytes" to stats.inboundBytes.toString()
+                )
+            )
+        }
     }
 
     private fun update(transform: (PrototypeSessionSnapshot) -> PrototypeSessionSnapshot) {
